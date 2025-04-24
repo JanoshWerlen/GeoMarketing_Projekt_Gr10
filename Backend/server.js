@@ -2,6 +2,7 @@
 const express = require("express")
 const cors = require("cors")
 const { Pool } = require("pg")
+require("dotenv").config()
 
 const app = express()
 const PORT = 4000 // you can change this
@@ -11,7 +12,7 @@ app.use(express.json())
 
 // PostgreSQL connection
 const pool = new Pool({
-  connectionString: 'postgresql://neondb_owner:npg_DPsUWjp02duo@ep-billowing-truth-a9hl403b-pooler.gwc.azure.neon.tech/neondb?sslmode=require'
+  connectionString: process.env.NEON_CONNECTION_STRING
 })
 
 // Cache for preloaded data
@@ -22,7 +23,7 @@ const cache = {
 
 // Preload data for all years
 const preloadData = async () => {
-  const years = Array.from({ length: 2023 - 1990 + 1 }, (_, i) => 1990 + i) // 1990 to 2023
+  const years = Array.from({ length: 2024 - 2011 + 1 }, (_, i) => 2011 + i) // 1990 to 2023
   console.log("⏳ Preloading data for all years...")
 
   for (const year of years) {
@@ -34,7 +35,7 @@ const preloadData = async () => {
           (SELECT jsonb_strip_nulls(to_jsonb(t) - 'geometry')) as properties,
           ST_AsGeoJSON(t.geometry)::json as geometry
         FROM (
-          SELECT * FROM gemeinden_merged WHERE "Year" = $1
+          SELECT * FROM public.gemeinden_merged WHERE "Year" = $1
         ) t`,
         [year]
       )
@@ -49,7 +50,7 @@ const preloadData = async () => {
 
       // Preload KPI data
       const kpiResult = await pool.query(
-        `SELECT * FROM gemeinden_merged WHERE "Year" = $1`,
+        `SELECT * FROM public.gemeinden_merged WHERE "Year" = $1`,
         [year]
       )
       const dropFields = ["geom", "geometry", "ARPS", "ART_CODE", "SHAPE_AREA", "SHAPE_LEN"]
@@ -116,7 +117,7 @@ app.get("/api/gemeinde-timeseries", async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT * FROM gemeinden_merged WHERE "BFS" = $1 ORDER BY "Year" ASC`,
+      `SELECT * FROM public.gemeinden_merged WHERE "BFS" = $1 ORDER BY "Year" ASC`,
       [bfs]
     )
 
@@ -134,7 +135,7 @@ app.get("/api/gemeinden-kpis", async (req, res) => {
     // Return all years for a specific Gemeinde
     try {
       const result = await pool.query(
-        `SELECT * FROM gemeinden_merged WHERE "GEBIET_NAME" = $1 ORDER BY "Year" ASC`,
+        `SELECT * FROM public.gemeinden_merged WHERE "GEBIET_NAME" = $1 ORDER BY "Year" ASC`,
         [gemeinde]
       );
       // Remove unwanted fields as in preloaded cache
@@ -162,7 +163,7 @@ const Cursor = require("pg-cursor");
 app.get("/api/gemeinden-kpis-all", async (req, res) => {
   try {
     const client = await pool.connect();
-    const query = `SELECT * FROM gemeinden_merged WHERE "Year" BETWEEN 1990 AND 2022`;
+    const query = `SELECT * FROM public.gemeinden_merged WHERE "Year" BETWEEN 1990 AND 2022`;
     const cursor = client.query(new Cursor(query));
 
     res.setHeader("Content-Type", "application/json");
@@ -209,7 +210,7 @@ app.get("/api/gemeinden-kpi-averages", async (req, res) => {
       SELECT "Year",
         AVG(CASE WHEN "${x}" IS NOT NULL THEN "${x}" ELSE NULL END)::float AS x_avg,
         AVG(CASE WHEN "${y}" IS NOT NULL THEN "${y}" ELSE NULL END)::float AS y_avg
-      FROM gemeinden_merged
+      FROM public.gemeinden_merged
       GROUP BY "Year"
       ORDER BY "Year"
     `
@@ -234,5 +235,6 @@ app.get("/api/gemeinden-geojson", (req, res) => {
 // Start server and preload data
 app.listen(PORT, async () => {
   console.log(`🚀 Server ready at http://localhost:${PORT}`)
+  await pool.query(`CREATE EXTENSION IF NOT EXISTS postgis`);
   await preloadData()
 })

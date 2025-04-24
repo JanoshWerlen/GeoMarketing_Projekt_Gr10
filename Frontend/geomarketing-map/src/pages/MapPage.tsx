@@ -129,7 +129,7 @@ export default function MapPage() {
         setGemeindenKpiData(data)
         const first = data[0] || {}
         const allKpis = Object.keys(first).filter(
-          (k) => typeof first[k] === "number"
+          (k) => typeof first[k] === "number" && k !== "BFS" && k !== "AREA_ROUND" // Exclude BFS and AREA_ROUND
         )
         setKpiList(allKpis)
         if (!allKpis.includes(selectedKpi)) {
@@ -196,8 +196,8 @@ export default function MapPage() {
           <label className="ml-6">Year: {year}</label>
           <input
             type="range"
-            min={1990}
-            max={2022}
+            min={2011}
+            max={2023}
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
           />

@@ -36,7 +36,8 @@ export default function CorrelationPage() {
       .then(json => {
         setData(json)
         const first = json[0] || {}
-        const keys = Object.keys(first).filter(k => typeof first[k] === "number")
+        const keys = Object.keys(first)
+          .filter(k => typeof first[k] === "number" && k !== "BFS" && k !== "AREA_ROUND") // Exclude BFS and AREA_ROUND
         setKpiList(keys)
   
         // Preserve selected KPIs if they still exist
@@ -138,8 +139,8 @@ export default function CorrelationPage() {
             <label>Jahr:</label>
             <input
               type="range"
-              min={1990}
-              max={2022}
+              min={2011}
+              max={2023}
               value={year}
               onChange={e => setYear(parseInt(e.target.value))}
             />
