@@ -1,0 +1,48 @@
+.env
+Export/
+*.geojson
+.venv
+
+# Node.js
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Test/coverage
+.coverage
+htmlcov/
+*.cover
+*.log
+
+# Pipenv/Poetry
+Pipfile.lock
+poetry.lock
+
+# MyPy
+.mypy_cache/
+
+# Pytest
+.pytest_cache/
+
+# Other environments
+.env.*
+.envrc

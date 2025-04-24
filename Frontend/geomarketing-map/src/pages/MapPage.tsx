@@ -1,0 +1,348 @@
+import { useEffect, useState, useCallback, useLayoutEffect } from "react"
+import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet"
+import "leaflet/dist/leaflet.css"
+import { Line } from "react-chartjs-2"
+import L from "leaflet"
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+} from "chart.js"
+
+ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend)
+
+// Helper function to compute the centroid of a polygon (GeoJSON coordinates)
+function getPolygonCentroid(coords: number[][]) {
+  let area = 0, x = 0, y = 0
+  for (let i = 0, len = coords.length, j = len - 1; i < len; j = i++) {
+    const [x0, y0] = coords[j]
+    const [x1, y1] = coords[i]
+    const f = x0 * y1 - x1 * y0
+    area += f
+    x += (x0 + x1) * f
+    y += (y0 + y1) * f
+  }
+  area *= 0.5
+  if (area === 0) {
+    // fallback: average of points
+    const lats = coords.map(c => c[1])
+    const lngs = coords.map(c => c[0])
+    return [lngs.reduce((a, b) => a + b, 0) / lngs.length, lats.reduce((a, b) => a + b, 0) / lats.length]
+  }
+  x /= 6 * area
+  y /= 6 * area
+  return [x, y]
+}
+
+// Helper component to add labels as Leaflet DivIcons
+function GemeindeLabels({ geoData }: { geoData: any }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!geoData || !geoData.features) return
+
+    const labelLayers: L.Marker[] = []
+
+    geoData.features.forEach((feature: any) => {
+      const name = feature.properties?.GEBIET_NAME
+      const geometry = feature.geometry
+      if (!name || !geometry) return
+
+      // Calculate centroid for Polygon or MultiPolygon using centroid algorithm
+      let latlng: L.LatLng | null = null
+      if (geometry.type === "Polygon") {
+        const centroid = getPolygonCentroid(geometry.coordinates[0])
+        latlng = L.latLng(centroid[1], centroid[0])
+      } else if (geometry.type === "MultiPolygon") {
+        // Use the largest polygon for centroid
+        let maxLen = 0
+        let maxCoords = geometry.coordinates[0][0]
+        geometry.coordinates.forEach((poly: any) => {
+          if (poly[0].length > maxLen) {
+            maxLen = poly[0].length
+            maxCoords = poly[0]
+          }
+        })
+        const centroid = getPolygonCentroid(maxCoords)
+        latlng = L.latLng(centroid[1], centroid[0])
+      }
+      if (!latlng) return
+
+      const marker = L.marker(latlng, {
+        icon: L.divIcon({
+          className: "gemeinde-label",
+          html: `<span style="background:rgba(255,255,255,0.8);padding:1px 4px;border-radius:4px;font-size:11px;color:#222;border:1px solid #ddd;white-space:nowrap;">${name}</span>`,
+          iconSize: undefined,
+        }),
+        interactive: false,
+        keyboard: false,
+      })
+      marker.addTo(map)
+      labelLayers.push(marker)
+    })
+
+    return () => {
+      labelLayers.forEach(marker => map.removeLayer(marker))
+    }
+  }, [geoData, map])
+
+  return null
+}
+
+export default function MapPage() {
+  const [year, setYear] = useState(2020)
+  const [geoData, setGeoData] = useState<any>(null)
+  const [gemeindenKpiData, setGemeindenKpiData] = useState<any[]>([])
+  const [thresholds, setThresholds] = useState<number[]>([])
+  const [selectedGemeinde, setSelectedGemeinde] = useState<any>(null)
+  const [gemeindeDetails, setGemeindeDetails] = useState<any>(null)
+  const [kpiList, setKpiList] = useState<string[]>([])
+  const [selectedKpi, setSelectedKpi] = useState<string>("Steuerkraft pro Kopf")
+  const [gemeindeTimeseries, setGemeindeTimeseries] = useState<any[] | null>(null)
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") setSelectedGemeinde(null)
+  }, [])
+
+  useEffect(() => {
+    if (selectedGemeinde) {
+      window.addEventListener("keydown", handleKeyDown)
+      return () => window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [selectedGemeinde, handleKeyDown])
+
+  useEffect(() => {
+    fetch(`http://localhost:4000/api/gemeinden-geojson?year=${year}`)
+      .then(res => res.json())
+      .then(setGeoData)
+      .catch((err) => console.error("GeoJSON geometry load error:", err))
+  }, [year])
+
+  useEffect(() => {
+    fetch(`http://localhost:4000/api/gemeinden-kpis?year=${year}`)
+      .then(res => res.json())
+      .then((data) => {
+        setGemeindenKpiData(data)
+        const first = data[0] || {}
+        const allKpis = Object.keys(first).filter(
+          (k) => typeof first[k] === "number"
+        )
+        setKpiList(allKpis)
+        if (!allKpis.includes(selectedKpi)) {
+          setSelectedKpi(allKpis[0] || "")
+        }
+        const values = data
+          .map((row: any) => row[selectedKpi])
+          .filter((v: any) => typeof v === "number" && !isNaN(v))
+          .sort((a: number, b: number) => a - b)
+        if (values.length < 2) return
+        const deciles: number[] = []
+        for (let i = 1; i < 10; i++) {
+          const idx = Math.floor((i * values.length) / 10)
+          deciles.push(values[idx])
+        }
+        setThresholds(deciles)
+      })
+      .catch((err) => console.error("KPI data load error:", err))
+  }, [year, selectedKpi])
+
+  useEffect(() => {
+    if (selectedGemeinde) {
+      // Fetch time series data for selected Gemeinde
+      fetch(`http://localhost:4000/api/gemeinde-timeseries?bfs=${selectedGemeinde.BFS}`)
+        .then(res => res.json())
+        .then(setGemeindeTimeseries)
+        .catch(() => setGemeindeTimeseries(null))
+    } else {
+      setGemeindeTimeseries(null)
+    }
+  }, [selectedGemeinde])
+
+  useLayoutEffect(() => {
+    const original = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = original
+    }
+  }, [])
+
+  const getColor = (value: number | undefined): string => {
+    if (typeof value !== "number" || isNaN(value)) return "#cccccc"
+    if (thresholds.length !== 9) return "#ccc"
+    return value <= thresholds[0] ? "#ffffff" :
+           value <= thresholds[1] ? "#f7fbff" :
+           value <= thresholds[2] ? "#deebf7" :
+           value <= thresholds[3] ? "#c6dbef" :
+           value <= thresholds[4] ? "#9ecae1" :
+           value <= thresholds[5] ? "#6baed6" :
+           value <= thresholds[6] ? "#4292c6" :
+           value <= thresholds[7] ? "#2171b5" :
+           value <= thresholds[8] ? "#08519c" :
+                                    "#08306b"
+  }
+
+  return (
+    <div className="w-screen h-screen flex flex-col overflow-hidden">
+      <div className="p-4 bg-gray-100 shadow z-10 flex-shrink-0">
+        <div className="flex gap-4 items-center">
+          <label>KPI:</label>
+          <select value={selectedKpi} onChange={(e) => setSelectedKpi(e.target.value)}>
+            {kpiList.map((k) => <option key={k}>{k}</option>)}
+          </select>
+          <label className="ml-6">Year: {year}</label>
+          <input
+            type="range"
+            min={1990}
+            max={2022}
+            value={year}
+            onChange={(e) => setYear(parseInt(e.target.value))}
+          />
+        </div>
+      </div>
+      <div className="flex-1 relative overflow-hidden">
+        {selectedGemeinde && (
+          <div
+            className="absolute top-4 left-4 text-black rounded-xl p-4 shadow-lg border border-gray-200 w-[340px] max-h-[80vh] overflow-y-auto z-[1000]"
+            style={{ backgroundColor: "#ffffff" }}
+          >
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-bold text-gray-800">
+                {selectedGemeinde.GEBIET_NAME ?? "Unbekannt"}
+              </h3>
+              <button
+                onClick={() => {
+                  setSelectedGemeinde(null)
+                  setGemeindeDetails(null)
+                }}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                title="Schliessen"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="text-sm text-gray-500 mb-2">
+              BFS-Nr.: {selectedGemeinde.BFS}
+            </div>
+            <div className="text-sm font-medium mb-2">Jahr: {year}</div>
+            {gemeindeDetails ? (
+              <div className="space-y-4">
+                {/* Render a timeline chart for each KPI */}
+                {Object.entries(gemeindeDetails)
+                  .filter(
+                    ([k, v]) =>
+                      typeof v === "number" &&
+                      k !== "BFS" &&
+                      k !== "Year" &&
+                      k !== "AREA_ROUND" // Exclude AREA_ROUND
+                  )
+                  .map(([k]) => (
+                    gemeindeTimeseries && gemeindeTimeseries.length > 0 ? (
+                      <div key={k}>
+                        <div className="font-semibold mb-1">{k}</div>
+                        <Line
+                          data={{
+                            labels: gemeindeTimeseries.map((row: any) => row.Year),
+                            datasets: [
+                              {
+                                label: k,
+                                data: gemeindeTimeseries.map((row: any) => row[k]),
+                                borderColor: "#2171b5",
+                                backgroundColor: "rgba(33,113,181,0.2)",
+                                fill: true,
+                                pointRadius: 2,
+                                tension: 0.2,
+                              },
+                            ],
+                          }}
+                          options={{
+                            responsive: true,
+                            plugins: {
+                              legend: { display: false },
+                              tooltip: { enabled: true },
+                            },
+                            scales: {
+                              x: { title: { display: true, text: "Jahr" } },
+                              y: { title: { display: true, text: k } },
+                            },
+                          }}
+                          height={120}
+                        />
+                      </div>
+                    ) : null
+                  ))}
+              </div>
+            ) : (
+              <div className="italic text-gray-500">Lade Daten...</div>
+            )}
+          </div>
+        )}
+
+        <MapContainer
+          center={[47.38, 8.54] as [number, number]}
+          zoom={11}
+          scrollWheelZoom={false}
+          dragging={false}
+          doubleClickZoom={false}
+          zoomControl={false}
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {geoData && Array.isArray(geoData.features) && geoData.features.length > 0 && (
+            <>
+              <GeoJSON
+                key={`${selectedKpi}-${year}`}
+                data={geoData}
+                style={(feature) => {
+                  const val = feature?.properties?.[selectedKpi]
+                  return {
+                    color: "#333",
+                    weight: 1,
+                    fillOpacity: 0.7,
+                    fillColor: getColor(val),
+                    opacity: 1,
+                    dashArray: "",
+                  }
+                }}
+                onEachFeature={(feature, layer) => {
+                  if (!feature || !feature.properties) return
+                  const bfs = feature.properties.BFS
+
+                  layer.on("click", () => {
+                    setSelectedGemeinde({
+                      GEBIET_NAME: feature.properties.GEBIET_NAME,
+                      BFS: feature.properties.BFS,
+                    })
+                    setGemeindeDetails(null)
+                    fetch(`http://localhost:4000/api/gemeinde-details?bfs=${bfs}&year=${year}`)
+                      .then(res => res.json())
+                      .then(data => setGemeindeDetails(data))
+                      .catch(err => console.error("Error fetching Gemeinde details:", err))
+                  })
+                  layer.on("mouseover", () => {
+                    (layer as L.Path).setStyle({
+                      weight: 2,
+                      color: "#666",
+                      fillOpacity: 0.9,
+                    })
+                  })
+                  layer.on("mouseout", () => {
+                    (layer as L.Path).setStyle({
+                      weight: 1,
+                      color: "#333",
+                      fillOpacity: 0.7,
+                    })
+                  })
+                }}
+              />
+              <GemeindeLabels geoData={geoData} />
+            </>
+          )}
+        </MapContainer>
+      </div>
+    </div>
+  )
+}
