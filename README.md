@@ -34,8 +34,24 @@ Project/
 │               ├── moran_results.csv
 │               └── moran_results.json
 ├── Project.ipynb
+├── .env
 └── README.md
 ```
+
+---
+
+## Environment Setup
+
+- Copy `.env` to your project root and fill in your database credentials:
+  ```
+  LOCAL_DB_USER=postgres
+  LOCAL_DB_PASSWORD=yourpassword
+  LOCAL_DB_HOST=localhost
+  LOCAL_DB_PORT=5432
+  LOCAL_DB_NAME=geomarketing
+  NEON_CONNECTION=your_neon_connection_string
+  ```
+- The Jupyter notebook and backend will read credentials from this file.
 
 ---
 
@@ -44,11 +60,14 @@ Project/
 ### 1. Data Preparation
 
 - Place your raw Excel data in `Data/Raw_Data.xlsx`.
-- Run the notebook `Project.ipynb` step by step:
-  - Cleans and uploads data to PostgreSQL.
-  - Loads and uploads shapefile to PostGIS.
-  - Creates the materialized view `gemeinden_merged`.
-  - Exports GeoJSONs and runs spatial analysis.
+- Open and run the notebook `Project.ipynb` step by step:
+  - Cleans and uploads data to PostgreSQL using credentials from `.env`.
+  - Loads and uploads the shapefile (`Gemeindegrenzen/UP_GEMEINDEN_F.shp`) to PostGIS.
+  - Creates the materialized view `gemeinden_merged` for efficient spatial/statistical queries.
+  - Exports GeoJSONs and analysis results (e.g., `geo_kpi_*.geojson`, `moran_results.json`) directly into `Frontend/geomarketing-map/public/data/` for use in the frontend.
+  - See the notebook for code to export additional KPIs or years as needed.
+
+---
 
 ### 2. Backend
 
@@ -62,11 +81,23 @@ Project/
   node server.js
   ```
 - The API runs at [http://localhost:4000](http://localhost:4000).
+- The backend connects to the Neon database using the `NEON_CONNECTION` string from `.env`.
 
 ### 3. Frontend
 
-- Place exported GeoJSON and analysis results in `Frontend/geomarketing-map/public/data/`.
-- (Frontend implementation not included in this repo.)
+- The frontend is implemented in [`Frontend/geomarketing-map/`](Frontend/geomarketing-map).
+- Place all exported GeoJSON and analysis result files (from the notebook) in `Frontend/geomarketing-map/public/data/`.
+- Install frontend dependencies:
+  ```
+  cd Frontend/geomarketing-map
+  npm install
+  ```
+- Start the frontend development server:
+  ```
+  npm run dev
+  ```
+- The frontend will be available at [http://localhost:5173](http://localhost:5173) (or as indicated by Vite).
+- The app provides interactive maps, KPI visualizations, correlation plots, and spatial analysis dashboards using the exported data and the backend API.
 
 ---
 
@@ -74,7 +105,7 @@ Project/
 
 Get municipality details:
 ```
-GET http://localhost:4000/api/municipality/{id}
+GET http://localhost:4000/api/gemeinde-details?bfs={BFS_NR}&year={Year}
 ```
 
 ---
