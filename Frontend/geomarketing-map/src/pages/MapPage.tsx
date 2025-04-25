@@ -93,6 +93,66 @@ function GemeindeLabels({ geoData }: { geoData: any }) {
   return null
 }
 
+// Helper for legend labels
+function formatNumber(val: number) {
+  if (Math.abs(val) >= 1e6) return (val / 1e6).toFixed(1) + " Mio"
+  if (Math.abs(val) >= 1e3) return (val / 1e3).toFixed(1) + "k"
+  return val.toLocaleString("de-CH")
+}
+
+function KpiLegend({ thresholds, selectedKpi }: { thresholds: number[], selectedKpi: string }) {
+  const colors = [
+    "#ffffff", "#f7fbff", "#deebf7", "#c6dbef", "#9ecae1",
+    "#6baed6", "#4292c6", "#2171b5", "#08519c", "#08306b"
+  ]
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "1rem",
+        right: "1rem",
+        zIndex: 1000,
+        backgroundColor: "#ffffff",
+        borderRadius: "0.75rem",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        padding: "1rem",
+        width: "260px",
+        border: "1px solid #e5e7eb"
+      }}
+    >
+      <div style={{ fontWeight: "600", marginBottom: "0.5rem", fontSize: "0.875rem", color: "#1f2937" }}>
+        {selectedKpi} Skala
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+        {colors.map((color, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", fontSize: "0.75rem" }}>
+            <span
+              style={{
+                width: "28px",
+                height: "16px",
+                backgroundColor: color,
+                border: "1px solid #bbb",
+                borderRadius: "2px",
+                display: "inline-block",
+                marginRight: "8px"
+              }}
+            />
+            <span>
+              {i === 0
+                ? `< ${formatNumber(thresholds[0])}`
+                : i === colors.length - 1
+                ? `> ${formatNumber(thresholds[thresholds.length - 1])}`
+                : `${formatNumber(thresholds[i - 1])} – ${formatNumber(thresholds[i])}`}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+
+
 export default function MapPage() {
   const [year, setYear] = useState(2020)
   const [geoData, setGeoData] = useState<any>(null)
@@ -187,26 +247,31 @@ export default function MapPage() {
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden">
-      <div className="p-4 bg-gray-100 shadow z-10 flex-shrink-0">
-        <div className="flex gap-4 items-center">
+      <div className="p-4 bg-white shadow rounded-xl z-10 flex-shrink-0 mb-4">
+        <div className="flex gap-4 items-center flex-wrap">
           <label>KPI:</label>
-          <select value={selectedKpi} onChange={(e) => setSelectedKpi(e.target.value)}>
+          <select value={selectedKpi} onChange={(e) => setSelectedKpi(e.target.value)} className="min-w-[180px]">
             {kpiList.map((k) => <option key={k}>{k}</option>)}
           </select>
-          <label className="ml-6">Year: {year}</label>
+          <label className="ml-6">Year: <span className="font-semibold text-blue-700">{year}</span></label>
           <input
             type="range"
             min={2011}
             max={2023}
             value={year}
             onChange={(e) => setYear(parseInt(e.target.value))}
+            className="w-32"
           />
         </div>
       </div>
       <div className="flex-1 relative overflow-hidden">
+        {/* KPI Legend at top right */}
+        {thresholds.length === 9 && (
+          <KpiLegend thresholds={thresholds} selectedKpi={selectedKpi} />
+        )}
         {selectedGemeinde && (
           <div
-            className="absolute top-4 left-4 text-black rounded-xl p-4 shadow-lg border border-gray-200 w-[340px] max-h-[80vh] overflow-y-auto z-[1000]"
+            className="absolute top-4 left-4 text-black rounded-xl p-6 shadow-lg border border-gray-200 w-[450px] max-h-[80vh] overflow-y-auto z-[1000] bg-white"
             style={{ backgroundColor: "#ffffff" }}
           >
             <div className="flex justify-between items-center mb-3">

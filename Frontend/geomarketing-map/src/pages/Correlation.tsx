@@ -115,21 +115,21 @@ export default function CorrelationPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Korrelationen zwischen KPIs</h1>
+      <h1 className="text-2xl font-bold mb-6 text-blue-900">Korrelationen zwischen KPIs</h1>
 
-      <div className="flex gap-4 items-center mb-4">
+      <div className="flex flex-wrap gap-4 items-center mb-6 bg-white rounded-xl shadow px-6 py-4">
         <label>KPI X:</label>
-        <select value={xKpi} onChange={e => setXKpi(e.target.value)}>
+        <select value={xKpi} onChange={e => setXKpi(e.target.value)} className="min-w-[140px]" >
           {kpiList.map(k => <option key={k}>{k}</option>)}
         </select>
 
         <label>KPI Y:</label>
-        <select value={yKpi} onChange={e => setYKpi(e.target.value)}>
+        <select value={yKpi} onChange={e => setYKpi(e.target.value)} className="min-w-[140px]">
           {kpiList.map(k => <option key={k}>{k}</option>)}
         </select>
 
         <label>Modus:</label>
-        <select value={mode} onChange={e => setMode(e.target.value as Mode)}>
+        <select value={mode} onChange={e => setMode(e.target.value as Mode)} className="min-w-[180px]">
           <option value="classic">Gemeinden (ein Jahr)</option>
           <option value="average">Durchschnitt je Jahr</option>
         </select>
@@ -143,8 +143,9 @@ export default function CorrelationPage() {
               max={2023}
               value={year}
               onChange={e => setYear(parseInt(e.target.value))}
+              className="w-32"
             />
-            <span>{year}</span>
+            <span className="font-semibold text-blue-700">{year}</span>
           </>
         )}
 
@@ -154,10 +155,9 @@ export default function CorrelationPage() {
           placeholder="Suche Gemeinde..."
           value={gemeindeSearch}
           onChange={e => setGemeindeSearch(e.target.value)}
-          className="border px-2 py-1 rounded"
-          style={{ minWidth: 120 }}
+          className="min-w-[120px]"
         />
-        <select value={trackedGemeinde} onChange={e => setTrackedGemeinde(e.target.value)}>
+        <select value={trackedGemeinde} onChange={e => setTrackedGemeinde(e.target.value)} className="min-w-[140px]">
           <option value="">Keine</option>
           {filteredGemeindeNames.map(name => (
             <option key={name} value={name}>{name}</option>
@@ -166,7 +166,7 @@ export default function CorrelationPage() {
       </div>
 
       <div className="flex gap-8">
-        <div className="h-[500px] w-1/2">
+        <div className="h-[500px] w-1/2 bg-white rounded-xl shadow p-4">
           <Scatter
             data={{
               datasets:
@@ -198,7 +198,7 @@ export default function CorrelationPage() {
             }}
           />
         </div>
-        <div className="h-[500px] w-1/2">
+        <div className="h-[500px] w-1/2 bg-white rounded-xl shadow p-4">
           {trackedGemeinde && trackedOvertime.length > 0 ? (
             <Line
               data={{

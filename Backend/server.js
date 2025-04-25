@@ -12,7 +12,7 @@ app.use(express.json())
 
 // PostgreSQL connection
 const pool = new Pool({
-  connectionString: process.env.NEON_CONNECTION_STRING
+  connectionString: process.env.LOCAL_DB_URL
 })
 
 // Cache for preloaded data
@@ -74,6 +74,37 @@ app.get("/", (req, res) => {
   res.send("✅ Backend is running")
 })
 
+app.get("/api/moran-scores", async (req, res) => {
+  const { year, kpi, gemeinden } = req.query;
+  if (!year || !kpi) return res.status(400).json({ error: "Missing year or KPI" });
+
+  try {
+    let result;
+    if (gemeinden) {
+      // Filter by BFS list
+      const ids = gemeinden.split(",").map(id => id.trim()).filter(Boolean);
+      if (ids.length === 0) return res.json([]);
+      // Use parameterized query for IN clause
+      const params = [year, kpi, ...ids];
+      const placeholders = ids.map((_, i) => `$${i + 3}`).join(",");
+      result = await pool.query(
+        `SELECT * FROM moran_scores WHERE "Year" = $1 AND "KPI" = $2 AND "BFS" IN (${placeholders})`,
+        params
+      );
+    } else {
+      // Return all for year and KPI
+      result = await pool.query(
+        `SELECT * FROM moran_scores WHERE "Year" = $1 AND "KPI" = $2`,
+        [year, kpi]
+      );
+    }
+    res.json(result.rows);
+  } catch (err) {
+    console.error("DB error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Gemeinde details API
 app.get("/api/gemeinde-details", async (req, res) => {
   const { bfs, year } = req.query
@@ -110,7 +141,7 @@ app.get("/api/gemeinde-details", async (req, res) => {
   }
 })
 
-// GET /api/gemeinde-timeseries?bfs=123
+// GET /api/gemeinde-timeseries
 app.get("/api/gemeinde-timeseries", async (req, res) => {
   const { bfs } = req.query
   if (!bfs) return res.status(400).json({ error: "Missing bfs" })
@@ -128,21 +159,22 @@ app.get("/api/gemeinde-timeseries", async (req, res) => {
   }
 })
 
-// Serve preloaded KPI data or all years for a Gemeinde
 app.get("/api/gemeinden-kpis", async (req, res) => {
   const { year, allYears, gemeinde } = req.query;
+
+  // ⬅️ Case 1: All years for a specific Gemeinde
   if (allYears && gemeinde) {
-    // Return all years for a specific Gemeinde
     try {
       const result = await pool.query(
         `SELECT * FROM public.gemeinden_merged WHERE "GEBIET_NAME" = $1 ORDER BY "Year" ASC`,
         [gemeinde]
       );
-      // Remove unwanted fields as in preloaded cache
       const dropFields = ["geom", "geometry", "ARPS", "ART_CODE", "SHAPE_AREA", "SHAPE_LEN"];
       const filtered = result.rows.map(row => {
         const r = { ...row };
         dropFields.forEach(f => delete r[f]);
+        // Ensure `Moran_I` exists as a float (or null)
+        if (!('Moran_I' in r)) r.Moran_I = null;
         return r;
       });
       return res.json(filtered);
@@ -151,12 +183,21 @@ app.get("/api/gemeinden-kpis", async (req, res) => {
       return res.status(500).json({ error: "Internal server error" });
     }
   }
-  // ...existing code for year-based cache...
+
+  // ⬅️ Case 2: Cached year-specific data
   if (!year || !cache.kpis[year]) {
     return res.status(400).json({ error: "Invalid or missing year" });
   }
-  res.json(cache.kpis[year]);
+
+  // ✅ Add Moran_I to cached data if missing
+  const enriched = cache.kpis[year].map(row => ({
+    ...row,
+    Moran_I: row.Moran_I ?? null,
+  }));
+
+  res.json(enriched);
 });
+
 
 const Cursor = require("pg-cursor");
 
@@ -230,6 +271,38 @@ app.get("/api/gemeinden-geojson", (req, res) => {
     return res.status(400).json({ error: "Invalid or missing year" })
   }
   res.json(cache.geojson[year])
+})
+
+// GET /api/gemeinde-adjacency
+app.get("/api/gemeinde-adjacency", async (req, res) => {
+  try {
+    // Query all Gemeinde geometries for the latest year (adjust as needed)
+    const year = 2023
+    const result = await pool.query(
+      `SELECT "BFS", geometry FROM public.gemeinden_merged WHERE "Year" = $1`,
+      [year]
+    )
+    const gemeinden = result.rows
+
+    // Build adjacency map: { BFS: [adjacent_BFS, ...], ... }
+    const adjacency = {}
+
+    // For each Gemeinde, find touching neighbors
+    for (const g of gemeinden) {
+      const neighborsResult = await pool.query(
+        `SELECT "BFS" FROM public.gemeinden_merged 
+         WHERE "Year" = $1 AND "BFS" != $2 
+         AND ST_Touches($3::geometry, geometry)`,
+        [year, g.BFS, g.geometry]
+      )
+      adjacency[g.BFS] = neighborsResult.rows.map(r => r.BFS.toString())
+    }
+
+    res.json(adjacency)
+  } catch (err) {
+    console.error("DB error:", err)
+    res.status(500).json({ error: "Internal server error" })
+  }
 })
 
 // Start server and preload data
