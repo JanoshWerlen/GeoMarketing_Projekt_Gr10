@@ -36,6 +36,7 @@ Project/
 │               └── moran_results.json
 ├── Project.ipynb
 ├── .env
+├── geomarketing_<date>.bak
 └── README.md
 ```
 
@@ -70,7 +71,20 @@ LOCAL_DB_URL=postgresql://postgres:<password>@localhost:5432/geomarketing
 NEON_CONNECTION_STRING=postgresql://<user>:<pw>@<host>/<db>?sslmode=require
 ```
 
-### 3. Prepare the Data
+### 3. Import the Database (Optional)
+
+A pre-built database backup (`geomarketing_<date>.bak`) is available in the project root.  
+You can restore it to your local PostgreSQL instance using:
+
+```sh
+pg_restore --verbose --clean --if-exists --no-owner -d <your_local_db_url> geomarketing_<date>.bak
+```
+
+Replace `<your_local_db_url>` with your connection string (e.g. `postgresql://postgres:password@localhost:5432/geomarketing`).
+
+This will save you time and allow you to skip the data cleaning and ETL steps if you just want to run the backend/frontend.
+
+### 4. Prepare the Data (if not using the .bak)
 
 - Place your raw Excel data in `Data/Raw_Data.xlsx`.
 - Place the shapefile in `Gemeindegrenzen/UP_GEMEINDEN_F.shp` (and associated files).
@@ -81,7 +95,7 @@ NEON_CONNECTION_STRING=postgresql://<user>:<pw>@<host>/<db>?sslmode=require
   - Exports GeoJSONs and analysis results (e.g., `geo_kpi_*.geojson`, `moran_results.json`) directly into `Frontend/geomarketing-map/public/data/` for use in the frontend.
   - See the notebook for code to export additional KPIs or years as needed.
 
-### 4. Start the Backend
+### 5. Start the Backend
 
 ```sh
 cd Backend
@@ -91,7 +105,7 @@ node server.js
 - The API runs at [http://localhost:4000](http://localhost:4000).
 - The backend connects to the database using the `LOCAL_DB_URL` or `NEON_CONNECTION_STRING` from `.env`.
 
-### 5. Start the Frontend
+### 6. Start the Frontend
 
 ```sh
 cd Frontend/geomarketing-map
