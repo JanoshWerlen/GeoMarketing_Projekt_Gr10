@@ -30,6 +30,12 @@ export default function CorrelationPage() {
   const [trackedGemeinde, setTrackedGemeinde] = useState<string>("")
   const [gemeindeSearch, setGemeindeSearch] = useState<string>("")
   const [trackedOvertime, setTrackedOvertime] = useState<any[]>([])
+  const [correlation, setCorrelation] = useState<{
+    r: number,
+    slope: number,
+    intercept: number,
+    equation: string
+  } | null>(null)
 
   useEffect(() => {
     fetch(`http://localhost:4000/api/gemeinden-kpis?year=${year}`)
@@ -70,6 +76,43 @@ export default function CorrelationPage() {
       setTrackedOvertime([])
     }
   }, [trackedGemeinde, xKpi, yKpi])
+
+  // Compute correlation and regression line
+  useEffect(() => {
+    // Guard: skip calculation if xKpi or yKpi is not selected
+    if (!xKpi || !yKpi) {
+      setCorrelation(null)
+      return
+    }
+    let points: { x: number, y: number }[] = []
+    if (mode === "classic") {
+      points = data
+        .filter(row => typeof row[xKpi] === "number" && typeof row[yKpi] === "number")
+        .map(row => ({ x: row[xKpi], y: row[yKpi] }))
+    } else if (mode === "average") {
+      points = averages
+        .filter(row => typeof row.x_avg === "number" && typeof row.y_avg === "number")
+        .map(row => ({ x: row.x_avg, y: row.y_avg }))
+    }
+    if (points.length < 2) {
+      setCorrelation(null)
+      return
+    }
+    // Pearson correlation and linear regression
+    const n = points.length
+    const sumX = points.reduce((a, p) => a + p.x, 0)
+    const sumY = points.reduce((a, p) => a + p.y, 0)
+    const meanX = sumX / n
+    const meanY = sumY / n
+    const covXY = points.reduce((a, p) => a + (p.x - meanX) * (p.y - meanY), 0)
+    const varX = points.reduce((a, p) => a + (p.x - meanX) ** 2, 0)
+    const varY = points.reduce((a, p) => a + (p.y - meanY) ** 2, 0) // <-- fix: use meanY
+    const r = covXY / Math.sqrt(varX * varY)
+    const slope = covXY / varX
+    const intercept = meanY - slope * meanX
+    const equation = `y = ${slope.toFixed(3)}x + ${intercept.toFixed(3)}`
+    setCorrelation({ r, slope, intercept, equation })
+  }, [data, averages, xKpi, yKpi, mode, year])
 
   const gemeindeNames = data.map(row => row.GEBIET_NAME).filter(Boolean)
   const filteredGemeindeNames = gemeindeNames.filter(name =>
@@ -114,9 +157,57 @@ export default function CorrelationPage() {
     backgroundColor: "#31a354"
   }
 
+  // Regression line for scatter plot
+  const regressionLineDataset =
+    correlation && (mode === "classic" ? data : averages).length > 1
+      ? (() => {
+          let points: { x: number, y: number }[] = []
+          if (mode === "classic") {
+            points = data
+              .filter(row => typeof row[xKpi] === "number" && typeof row[yKpi] === "number")
+              .map(row => ({ x: row[xKpi], y: row[yKpi] }))
+          } else if (mode === "average") {
+            points = averages
+              .filter(row => typeof row.x_avg === "number" && typeof row.y_avg === "number")
+              .map(row => ({ x: row.x_avg, y: row.y_avg }))
+          }
+          if (points.length < 2) return null
+          const xs = points.map(p => p.x)
+          const minX = Math.min(...xs)
+          const maxX = Math.max(...xs)
+          const y1 = correlation.slope * minX + correlation.intercept
+          const y2 = correlation.slope * maxX + correlation.intercept
+          return {
+            label: "Regression",
+            data: [
+              { x: minX, y: y1 },
+              { x: maxX, y: y2 }
+            ],
+            type: "line" as const,
+            borderColor: "#636363",
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            order: 0,
+            borderDash: [6, 4],
+            datalabels: { display: false } // <-- Prevent datalabels on regression line
+          }
+        })()
+      : null
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-blue-900">Korrelationen zwischen KPIs</h1>
+
+      {correlation && (
+  <div className="mb-4 px-6 py-3 bg-blue-50 rounded shadow flex flex-wrap gap-x-12 gap-y-2 items-center text-blue-900">
+    <div className="flex items-center">
+      <b>Pearson r:</b>&nbsp;<span className="inline-block min-w-[80px]">{correlation.r.toFixed(3)}</span>
+    </div>
+
+  </div>
+)}
+
 
       <div className="flex flex-wrap gap-4 items-center mb-6 bg-white rounded-xl shadow px-6 py-4">
         <label>KPI X:</label>
@@ -171,9 +262,16 @@ export default function CorrelationPage() {
           <Scatter
             data={{
               datasets:
-                mode === "classic"
-                  ? [classicDataset, ...(trackedDataset ? [trackedDataset] : [])]
-                  : [averageDataset]
+                (mode === "classic"
+                  ? [
+                      classicDataset,
+                      ...(trackedDataset ? [trackedDataset] : []),
+                      ...(regressionLineDataset ? [regressionLineDataset] : [])
+                    ]
+                  : [
+                      averageDataset,
+                      ...(regressionLineDataset ? [regressionLineDataset] : [])
+                    ]) as any
             }}
             options={{
               responsive: true,
@@ -183,7 +281,7 @@ export default function CorrelationPage() {
                   callbacks: {
                     label: ctx => {
                       const raw = ctx.raw as any
-                      return `${raw.label}: (${raw.x}, ${raw.y})`
+                      return `${raw.label ? raw.label + ": " : ""}(${raw.x}, ${raw.y})`
                     }
                   }
                 },

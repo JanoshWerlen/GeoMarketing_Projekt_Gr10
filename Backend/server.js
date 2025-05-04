@@ -233,7 +233,7 @@ const Cursor = require("pg-cursor");
 app.get("/api/gemeinden-kpis-all", async (req, res) => {
   try {
     const client = await pool.connect();
-    const query = `SELECT * FROM public.gemeinden_merged WHERE "Year" BETWEEN 1990 AND 2022`;
+    const query = `SELECT * FROM public.gemeinden_merged WHERE "Year" BETWEEN 1990 AND 2024`;
     const cursor = client.query(new Cursor(query));
 
     res.setHeader("Content-Type", "application/json");
