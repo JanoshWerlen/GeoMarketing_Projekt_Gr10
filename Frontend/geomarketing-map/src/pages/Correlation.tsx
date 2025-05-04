@@ -13,8 +13,9 @@ import {
   LineElement,
   CategoryScale
 } from "chart.js"
+import ChartDataLabels from "chartjs-plugin-datalabels"
 
-ChartJS.register(LinearScale, PointElement, Tooltip, Legend, Title, LineElement, CategoryScale)
+ChartJS.register(LinearScale, PointElement, Tooltip, Legend, Title, LineElement, CategoryScale, ChartDataLabels)
 
 type Mode = "classic" | "average"
 
@@ -189,13 +190,27 @@ export default function CorrelationPage() {
                 title: {
                   display: true,
                   text: `${yKpi} vs ${xKpi} (${mode === "classic" ? `Gemeinden ${year}` : "Jahresdurchschnitt"})`
-                }
+                },
+                datalabels: mode === "average"
+                  ? {
+                      align: "right",
+                      anchor: "end",
+                      font: { weight: "bold" },
+                      color: "#31a354",
+                      formatter: function(value: any) {
+                        return value.label
+                      }
+                    }
+                  : {
+                      display: false
+                    }
               },
               scales: {
                 x: { title: { display: true, text: xKpi } },
                 y: { title: { display: true, text: yKpi } }
               }
             }}
+            plugins={[ChartDataLabels]}
           />
         </div>
         <div className="h-[500px] w-1/2 bg-white rounded-xl shadow p-4">

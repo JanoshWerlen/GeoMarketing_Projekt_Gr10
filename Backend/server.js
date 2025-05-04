@@ -21,6 +21,25 @@ const cache = {
   kpis: {},    // { year: kpiData }
 }
 
+// Utility: Convert numeric-looking strings to numbers in an object
+function convertNumericStrings(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(convertNumericStrings);
+  }
+  if (obj && typeof obj === "object") {
+    const out = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === "string" && value.trim() !== "" && !isNaN(value)) {
+        out[key] = Number(value);
+      } else {
+        out[key] = value;
+      }
+    }
+    return out;
+  }
+  return obj;
+}
+
 // Preload data for all years
 const preloadData = async () => {
   const years = Array.from({ length: 2024 - 2011 + 1 }, (_, i) => 2011 + i) // 1990 to 2023
@@ -69,10 +88,18 @@ const preloadData = async () => {
   console.log("✅ Preloading complete.")
 }
 
+// ==========================
+// 🚦 Health & Utility Routes
+// ==========================
+
 // Simple test route
 app.get("/", (req, res) => {
   res.send("✅ Backend is running")
 })
+
+// ==========================
+// 📊 KPI & Moran Score APIs
+// ==========================
 
 app.get("/api/moran-scores", async (req, res) => {
   const { year, kpi, gemeinden } = req.query;
@@ -98,12 +125,16 @@ app.get("/api/moran-scores", async (req, res) => {
         [year, kpi]
       );
     }
-    res.json(result.rows);
+    res.json(convertNumericStrings(result.rows));
   } catch (err) {
     console.error("DB error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// ==========================
+// 🏘️ Gemeinde Details & Timeseries APIs
+// ==========================
 
 // Gemeinde details API
 app.get("/api/gemeinde-details", async (req, res) => {
@@ -118,23 +149,17 @@ app.get("/api/gemeinde-details", async (req, res) => {
     const row = result.rows[0]
     if (!row) return res.status(404).json({ error: "Not found" })
 
-    // Fields to always include:
-    const alwaysInclude = ["BFS", "BFS_NR", "GEBIET_NAME", "Year"]
+    // Drop the same fields as /api/gemeinden-kpis
+    const dropFields = ["geom", "geometry", "ARPS", "ART_CODE", "SHAPE_AREA", "SHAPE_LEN", "BFS_NR"]
+    const filtered = { ...row }
+    dropFields.forEach(field => {
+      delete filtered[field]
+    })
 
-    // Filter: keep numbers (KPIs) + essential meta
-    const filtered = Object.fromEntries(
-      Object.entries(row).filter(([key, value]) =>
-        alwaysInclude.includes(key) || typeof value === "number"
-      )
-    )
+    // Ensure Moran_I exists as float or null (optional, for consistency)
+    if (!('Moran_I' in filtered)) filtered.Moran_I = null
 
-  // Drop the following fields: ARPS, ART_CODE, SHAPE_AREA, SHAPE_LEN
-  const dropFields = ["ARPS", "ART_CODE", "SHAPE_AREA", "SHAPE_LEN"]
-  dropFields.forEach(field => {
-    delete filtered[field]
-  })
-
-  res.json(filtered)
+    res.json(convertNumericStrings(filtered))
   } catch (err) {
     console.error("DB error:", err)
     res.status(500).json({ error: "Internal server error" })
@@ -152,12 +177,16 @@ app.get("/api/gemeinde-timeseries", async (req, res) => {
       [bfs]
     )
 
-    res.json(result.rows)
+    res.json(convertNumericStrings(result.rows))
   } catch (err) {
     console.error("DB error:", err)
     res.status(500).json({ error: "Internal error" })
   }
 })
+
+// ==========================
+// 🗂️ Gemeinde KPIs APIs
+// ==========================
 
 app.get("/api/gemeinden-kpis", async (req, res) => {
   const { year, allYears, gemeinde } = req.query;
@@ -177,7 +206,7 @@ app.get("/api/gemeinden-kpis", async (req, res) => {
         if (!('Moran_I' in r)) r.Moran_I = null;
         return r;
       });
-      return res.json(filtered);
+      return res.json(convertNumericStrings(filtered));
     } catch (err) {
       console.error("DB error:", err);
       return res.status(500).json({ error: "Internal server error" });
@@ -189,18 +218,18 @@ app.get("/api/gemeinden-kpis", async (req, res) => {
     return res.status(400).json({ error: "Invalid or missing year" });
   }
 
-  // ✅ Add Moran_I to cached data if missing
-  const enriched = cache.kpis[year].map(row => ({
-    ...row,
-    Moran_I: row.Moran_I ?? null,
-  }));
+  // Convert numeric-looking strings to numbers for each row
+  const enriched = cache.kpis[year].map(row => {
+    const r = { ...row, Moran_I: row.Moran_I ?? null };
+    return r;
+  });
 
-  res.json(enriched);
+  res.json(convertNumericStrings(enriched));
 });
-
 
 const Cursor = require("pg-cursor");
 
+// Stream all Gemeinde KPIs for all years (large data)
 app.get("/api/gemeinden-kpis-all", async (req, res) => {
   try {
     const client = await pool.connect();
@@ -226,7 +255,7 @@ app.get("/api/gemeinden-kpis-all", async (req, res) => {
 
         for (const row of rows) {
           if (!first) res.write(",");
-          res.write(JSON.stringify(row));
+          res.write(JSON.stringify(convertNumericStrings(row)));
           first = false;
         }
 
@@ -257,12 +286,16 @@ app.get("/api/gemeinden-kpi-averages", async (req, res) => {
     `
 
     const result = await pool.query(query)
-    res.json(result.rows)
+    res.json(convertNumericStrings(result.rows))
   } catch (err) {
     console.error("DB error:", err)
     res.status(500).json({ error: "Internal server error" })
   }
 })
+
+// ==========================
+// 🗺️ GeoJSON & Spatial APIs
+// ==========================
 
 // Serve preloaded GeoJSON data
 app.get("/api/gemeinden-geojson", (req, res) => {
@@ -270,7 +303,7 @@ app.get("/api/gemeinden-geojson", (req, res) => {
   if (!year || !cache.geojson[year]) {
     return res.status(400).json({ error: "Invalid or missing year" })
   }
-  res.json(cache.geojson[year])
+  res.json(convertNumericStrings(cache.geojson[year]))
 })
 
 // GET /api/gemeinde-adjacency
@@ -298,12 +331,16 @@ app.get("/api/gemeinde-adjacency", async (req, res) => {
       adjacency[g.BFS] = neighborsResult.rows.map(r => r.BFS.toString())
     }
 
-    res.json(adjacency)
+    res.json(convertNumericStrings(adjacency))
   } catch (err) {
     console.error("DB error:", err)
     res.status(500).json({ error: "Internal server error" })
   }
 })
+
+// ==========================
+// 🚀 Server Startup
+// ==========================
 
 // Start server and preload data
 app.listen(PORT, async () => {

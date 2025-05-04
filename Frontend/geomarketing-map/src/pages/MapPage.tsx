@@ -271,11 +271,16 @@ export default function MapPage() {
         )}
         {selectedGemeinde && (
           <div
-            className="absolute top-4 left-4 text-black rounded-xl p-6 shadow-lg border border-gray-200 w-[450px] max-h-[80vh] overflow-y-auto z-[1000] bg-white"
-            style={{ backgroundColor: "#ffffff" }}
+            className="absolute top-8 left-8 text-black rounded-2xl p-8 shadow-2xl border border-gray-100 w-[420px] max-h-[80vh] overflow-y-auto z-[1000] bg-white transition-all"
+            style={{
+              background: "rgba(255,255,255,0.97)",
+              boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)",
+              border: "1.5px solid #e5e7eb",
+              backdropFilter: "blur(2px)",
+            }}
           >
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-bold text-gray-800">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800 tracking-tight">
                 {selectedGemeinde.GEBIET_NAME ?? "Unbekannt"}
               </h3>
               <button
@@ -283,18 +288,24 @@ export default function MapPage() {
                   setSelectedGemeinde(null)
                   setGemeindeDetails(null)
                 }}
-                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-blue-100 text-gray-400 hover:text-blue-600 text-2xl font-bold transition-colors shadow"
                 title="Schliessen"
+                style={{ lineHeight: 1 }}
               >
                 &times;
               </button>
             </div>
-            <div className="text-sm text-gray-500 mb-2">
-              BFS-Nr.: {selectedGemeinde.BFS}
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold tracking-wide border border-blue-100">
+                BFS-Nr.: {selectedGemeinde.BFS}
+              </span>
+              <span className="text-xs bg-gray-50 text-gray-700 px-2 py-0.5 rounded font-semibold tracking-wide border border-gray-100">
+                Jahr: {year}
+              </span>
             </div>
-            <div className="text-sm font-medium mb-2">Jahr: {year}</div>
+            <hr className="my-3 border-gray-200" />
             {gemeindeDetails ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* Render a timeline chart for each KPI */}
                 {Object.entries(gemeindeDetails)
                   .filter(
@@ -306,8 +317,8 @@ export default function MapPage() {
                   )
                   .map(([k]) => (
                     gemeindeTimeseries && gemeindeTimeseries.length > 0 ? (
-                      <div key={k}>
-                        <div className="font-semibold mb-1">{k}</div>
+                      <div key={k} className="bg-gray-50 rounded-lg p-4 shadow-sm border border-gray-100">
+                        <div className="font-semibold mb-2 text-gray-700">{k}</div>
                         <Line
                           data={{
                             labels: gemeindeTimeseries.map((row: any) => row.Year),
@@ -316,7 +327,7 @@ export default function MapPage() {
                                 label: k,
                                 data: gemeindeTimeseries.map((row: any) => row[k]),
                                 borderColor: "#2171b5",
-                                backgroundColor: "rgba(33,113,181,0.2)",
+                                backgroundColor: "rgba(33,113,181,0.08)",
                                 fill: true,
                                 pointRadius: 2,
                                 tension: 0.2,
@@ -328,9 +339,13 @@ export default function MapPage() {
                             plugins: {
                               legend: { display: false },
                               tooltip: { enabled: true },
+                              datalabels: { display: false }, // <-- disables point labels
                             },
                             scales: {
-                              x: { title: { display: true, text: "Jahr" } },
+                              x: { 
+                                title: { display: true, text: "Jahr" },
+                                // ...if you have tick callback, keep it here...
+                              },
                               y: { title: { display: true, text: k } },
                             },
                           }}
@@ -341,14 +356,14 @@ export default function MapPage() {
                   ))}
               </div>
             ) : (
-              <div className="italic text-gray-500">Lade Daten...</div>
+              <div className="italic text-gray-400 text-center py-8">Lade Daten...</div>
             )}
           </div>
         )}
 
         <MapContainer
-          center={[47.38, 8.54] as [number, number]}
-          zoom={11}
+          center={[47.4, 8.54] as [number, number]}
+          zoom={10.5}
           scrollWheelZoom={false}
           dragging={false}
           doubleClickZoom={false}
