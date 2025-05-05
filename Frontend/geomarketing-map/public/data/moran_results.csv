@@ -1,46 +1,46 @@
 Year,KPI,Moran_I,p_value
-2011,Bevölkerung,0.0341,0.045
+2011,Bevölkerung,0.0341,0.041
 2011,Jahresergebnis,-0.1117,0.015
 2011,Gesundheitsaufwand pro Einwohner,0.5716,0.001
-2011,Bildungsaufwand pro Einwohner,0.1365,0.003
-2011,Bauinvestition pro Einwohner,0.033,0.214
-2011,Bauinvestition in Mio,0.0192,0.044
-2011,Arbeitslosenquote,0.0342,0.047
+2011,Bildungsaufwand pro Einwohner,0.1365,0.006
+2011,Bauinvestition pro Einwohner,0.033,0.222
+2011,Bauinvestition in Mio,0.0192,0.046
+2011,Arbeitslosenquote,0.0342,0.046
 2011,Arbeitsstätten,0.019,0.041
 2011,Anteil NatPers Steuer,0.3419,0.001
 2011,Anteil JurPers Stuer,0.3419,0.001
 2011,Sozialhilfequote,0.3398,0.001
-2011,Anzahl Neugründungen Unternehmen,0.0205,0.051
-2011,Reingewinn JursPers in Mio,0.0177,0.055
+2011,Anzahl Neugründungen Unternehmen,0.0205,0.04
+2011,Reingewinn JursPers in Mio,0.0177,0.037
 2011,Steuerbares Einkommen NatPers Median,0.3198,0.001
-2011,Steuerkraft Bereinigt,0.0368,0.036
-2011,Steuerkraft in Mio,0.054,0.018
+2011,Steuerkraft Bereinigt,0.0368,0.031
+2011,Steuerkraft in Mio,0.054,0.021
 2011,Steuerbaresvermögen Nat_Pers_Median,0.3673,0.001
-2011,Anzahl Beschäftigte,0.0232,0.042
+2011,Anzahl Beschäftigte,0.0232,0.029
 2011,Wohneigentumsanteil,0.3506,0.001
 2011,Steuerfuss,0.3297,0.001
 2011,Steuerfuss JusPers,0.4352,0.001
 2011,Steuerkraft pro Kopf,0.2191,0.001
 2011,Steuerkraft/Steuerfuss,0.5765,0.001
-2011,Jahresergebnis_per_capita,0.0108,0.343
-2011,Bauinvestition in Mio_per_capita,0.0318,0.24
+2011,Jahresergebnis_per_capita,0.0108,0.339
+2011,Bauinvestition in Mio_per_capita,0.0318,0.239
 2011,Anzahl Beschäftigte_per_capita,0.2882,0.001
-2011,Steuerkraft in Mio_per_capita,0.2192,0.001
+2011,Steuerkraft in Mio_per_capita,0.2192,0.002
 2012,Bevölkerung,0.0341,0.038
-2012,Jahresergebnis,-0.0159,0.456
+2012,Jahresergebnis,-0.0159,0.471
 2012,Gesundheitsaufwand pro Einwohner,0.2533,0.001
 2012,Bildungsaufwand pro Einwohner,0.2271,0.001
-2012,Bauinvestition pro Einwohner,0.0256,0.203
-2012,Bauinvestition in Mio,0.0248,0.043
-2012,Arbeitslosenquote,0.036,0.047
-2012,Arbeitsstätten,0.0185,0.05
+2012,Bauinvestition pro Einwohner,0.0256,0.18
+2012,Bauinvestition in Mio,0.0248,0.03
+2012,Arbeitslosenquote,0.036,0.036
+2012,Arbeitsstätten,0.0185,0.047
 2012,Anteil NatPers Steuer,0.3276,0.001
 2012,Anteil JurPers Stuer,0.3276,0.001
 2012,Sozialhilfequote,0.3406,0.001
-2012,Anzahl Neugründungen Unternehmen,0.0205,0.035
-2012,Reingewinn JursPers in Mio,0.0317,0.031
+2012,Anzahl Neugründungen Unternehmen,0.0205,0.033
+2012,Reingewinn JursPers in Mio,0.0317,0.043
 2012,Steuerbares Einkommen NatPers Median,0.323,0.001
-2012,Steuerkraft Bereinigt,0.0395,0.038
+2012,Steuerkraft Bereinigt,0.0395,0.031
 2012,Steuerkraft in Mio,0.0588,0.009
 2012,Steuerbaresvermögen Nat_Pers_Median,0.3525,0.001
 2012,Anzahl Beschäftigte,0.0227,0.043
@@ -49,277 +49,277 @@ Year,KPI,Moran_I,p_value
 2012,Steuerfuss JusPers,0.4099,0.001
 2012,Steuerkraft pro Kopf,0.589,0.001
 2012,Steuerkraft/Steuerfuss,0.5617,0.001
-2012,Jahresergebnis_per_capita,-0.0264,0.332
-2012,Bauinvestition in Mio_per_capita,0.0202,0.208
+2012,Jahresergebnis_per_capita,-0.0264,0.323
+2012,Bauinvestition in Mio_per_capita,0.0202,0.204
 2012,Anzahl Beschäftigte_per_capita,0.2945,0.001
 2012,Steuerkraft in Mio_per_capita,0.5892,0.001
-2013,Bevölkerung,0.0347,0.036
-2013,Jahresergebnis,-0.1096,0.011
+2013,Bevölkerung,0.0347,0.044
+2013,Jahresergebnis,-0.1096,0.015
 2013,Gesundheitsaufwand pro Einwohner,0.2982,0.001
 2013,Bildungsaufwand pro Einwohner,0.2683,0.001
-2013,Bauinvestition pro Einwohner,0.1026,0.018
+2013,Bauinvestition pro Einwohner,0.1026,0.02
 2013,Bauinvestition in Mio,0.0376,0.025
-2013,Arbeitslosenquote,0.0379,0.035
-2013,Arbeitsstätten,0.0177,0.055
+2013,Arbeitslosenquote,0.0379,0.046
+2013,Arbeitsstätten,0.0177,0.046
 2013,Anteil NatPers Steuer,0.3667,0.001
 2013,Anteil JurPers Stuer,0.3667,0.001
 2013,Sozialhilfequote,0.3194,0.001
-2013,Anzahl Neugründungen Unternehmen,0.0156,0.039
-2013,Reingewinn JursPers in Mio,0.0306,0.029
+2013,Anzahl Neugründungen Unternehmen,0.0156,0.038
+2013,Reingewinn JursPers in Mio,0.0306,0.019
 2013,Steuerbares Einkommen NatPers Median,0.3133,0.001
-2013,Steuerkraft Bereinigt,0.0405,0.039
-2013,Steuerkraft in Mio,0.0594,0.011
+2013,Steuerkraft Bereinigt,0.0405,0.038
+2013,Steuerkraft in Mio,0.0594,0.012
 2013,Steuerbaresvermögen Nat_Pers_Median,0.3524,0.001
-2013,Anzahl Beschäftigte,0.0216,0.041
+2013,Anzahl Beschäftigte,0.0216,0.049
 2013,Wohneigentumsanteil,0.3405,0.001
 2013,Steuerfuss,0.3606,0.001
 2013,Steuerfuss JusPers,0.4142,0.001
 2013,Steuerkraft pro Kopf,0.6002,0.001
 2013,Steuerkraft/Steuerfuss,0.576,0.001
-2013,Jahresergebnis_per_capita,-0.0226,0.387
-2013,Bauinvestition in Mio_per_capita,0.1058,0.02
+2013,Jahresergebnis_per_capita,-0.0226,0.406
+2013,Bauinvestition in Mio_per_capita,0.1058,0.021
 2013,Anzahl Beschäftigte_per_capita,0.2748,0.001
 2013,Steuerkraft in Mio_per_capita,0.6007,0.001
-2014,Bevölkerung,0.0352,0.046
-2014,Jahresergebnis,0.1153,0.007
+2014,Bevölkerung,0.0352,0.037
+2014,Jahresergebnis,0.1153,0.012
 2014,Gesundheitsaufwand pro Einwohner,0.4199,0.001
 2014,Bildungsaufwand pro Einwohner,0.2807,0.001
-2014,Bauinvestition pro Einwohner,0.0996,0.028
-2014,Bauinvestition in Mio,0.0304,0.031
-2014,Arbeitslosenquote,0.0423,0.036
-2014,Arbeitsstätten,0.0178,0.034
+2014,Bauinvestition pro Einwohner,0.0996,0.031
+2014,Bauinvestition in Mio,0.0304,0.041
+2014,Arbeitslosenquote,0.0423,0.028
+2014,Arbeitsstätten,0.0178,0.054
 2014,Anteil NatPers Steuer,0.3335,0.001
 2014,Anteil JurPers Stuer,0.3335,0.001
 2014,Sozialhilfequote,0.3067,0.001
-2014,Anzahl Neugründungen Unternehmen,0.0205,0.039
-2014,Reingewinn JursPers in Mio,0.0306,0.032
+2014,Anzahl Neugründungen Unternehmen,0.0205,0.047
+2014,Reingewinn JursPers in Mio,0.0306,0.029
 2014,Steuerbares Einkommen NatPers Median,0.3153,0.001
-2014,Steuerkraft Bereinigt,0.0397,0.032
-2014,Steuerkraft in Mio,0.057,0.006
+2014,Steuerkraft Bereinigt,0.0397,0.029
+2014,Steuerkraft in Mio,0.057,0.009
 2014,Steuerbaresvermögen Nat_Pers_Median,0.358,0.001
-2014,Anzahl Beschäftigte,0.0229,0.046
+2014,Anzahl Beschäftigte,0.0229,0.035
 2014,Wohneigentumsanteil,0.3389,0.001
 2014,Steuerfuss,0.3369,0.001
 2014,Steuerfuss JusPers,0.3936,0.001
 2014,Steuerkraft pro Kopf,0.5963,0.001
 2014,Steuerkraft/Steuerfuss,0.5718,0.001
-2014,Jahresergebnis_per_capita,0.0652,0.063
-2014,Bauinvestition in Mio_per_capita,0.1074,0.017
+2014,Jahresergebnis_per_capita,0.0652,0.093
+2014,Bauinvestition in Mio_per_capita,0.1074,0.024
 2014,Anzahl Beschäftigte_per_capita,0.2966,0.001
 2014,Steuerkraft in Mio_per_capita,0.5961,0.001
-2015,Bevölkerung,0.0365,0.03
-2015,Jahresergebnis,0.098,0.031
+2015,Bevölkerung,0.0365,0.049
+2015,Jahresergebnis,0.098,0.035
 2015,Gesundheitsaufwand pro Einwohner,0.4315,0.001
 2015,Bildungsaufwand pro Einwohner,0.1941,0.001
-2015,Bauinvestition pro Einwohner,0.1206,0.025
-2015,Bauinvestition in Mio,0.0132,0.057
-2015,Arbeitslosenquote,0.0452,0.03
-2015,Arbeitsstätten,0.0172,0.049
+2015,Bauinvestition pro Einwohner,0.1206,0.013
+2015,Bauinvestition in Mio,0.0132,0.05
+2015,Arbeitslosenquote,0.0452,0.021
+2015,Arbeitsstätten,0.0172,0.052
 2015,Anteil NatPers Steuer,0.3837,0.001
 2015,Anteil JurPers Stuer,0.3837,0.001
 2015,Sozialhilfequote,0.3023,0.001
-2015,Anzahl Neugründungen Unternehmen,0.015,0.05
-2015,Reingewinn JursPers in Mio,0.0265,0.025
+2015,Anzahl Neugründungen Unternehmen,0.015,0.056
+2015,Reingewinn JursPers in Mio,0.0265,0.021
 2015,Steuerbares Einkommen NatPers Median,0.3147,0.001
-2015,Steuerkraft Bereinigt,0.0422,0.03
+2015,Steuerkraft Bereinigt,0.0422,0.021
 2015,Steuerkraft in Mio,0.0583,0.006
 2015,Steuerbaresvermögen Nat_Pers_Median,0.3447,0.001
-2015,Anzahl Beschäftigte,0.0226,0.046
+2015,Anzahl Beschäftigte,0.0226,0.04
 2015,Wohneigentumsanteil,0.3384,0.001
 2015,Steuerfuss,0.3364,0.001
 2015,Steuerfuss JusPers,0.3945,0.001
 2015,Steuerkraft pro Kopf,0.6211,0.001
 2015,Steuerkraft/Steuerfuss,0.5989,0.001
-2015,Jahresergebnis_per_capita,0.0876,0.049
-2015,Bauinvestition in Mio_per_capita,0.1247,0.016
+2015,Jahresergebnis_per_capita,0.0876,0.032
+2015,Bauinvestition in Mio_per_capita,0.1247,0.014
 2015,Anzahl Beschäftigte_per_capita,0.2892,0.001
 2015,Steuerkraft in Mio_per_capita,0.6211,0.001
-2016,Bevölkerung,0.0371,0.033
-2016,Jahresergebnis,0.1297,0.008
+2016,Bevölkerung,0.0371,0.028
+2016,Jahresergebnis,0.1297,0.005
 2016,Gesundheitsaufwand pro Einwohner,0.4142,0.001
 2016,Bildungsaufwand pro Einwohner,0.1973,0.001
-2016,Bauinvestition pro Einwohner,0.1095,0.017
-2016,Bauinvestition in Mio,0.0094,0.103
-2016,Arbeitslosenquote,0.0474,0.029
-2016,Arbeitsstätten,0.0171,0.029
+2016,Bauinvestition pro Einwohner,0.1095,0.018
+2016,Bauinvestition in Mio,0.0094,0.094
+2016,Arbeitslosenquote,0.0474,0.034
+2016,Arbeitsstätten,0.0171,0.043
 2016,Anteil NatPers Steuer,0.3898,0.001
 2016,Anteil JurPers Stuer,0.3898,0.001
 2016,Sozialhilfequote,0.3482,0.001
-2016,Anzahl Neugründungen Unternehmen,0.0173,0.044
-2016,Reingewinn JursPers in Mio,0.0197,0.041
+2016,Anzahl Neugründungen Unternehmen,0.0173,0.035
+2016,Reingewinn JursPers in Mio,0.0197,0.035
 2016,Steuerbares Einkommen NatPers Median,0.3023,0.001
-2016,Steuerkraft Bereinigt,0.0412,0.024
-2016,Steuerkraft in Mio,0.0544,0.005
+2016,Steuerkraft Bereinigt,0.0412,0.031
+2016,Steuerkraft in Mio,0.0544,0.009
 2016,Steuerbaresvermögen Nat_Pers_Median,0.3418,0.001
-2016,Anzahl Beschäftigte,0.0226,0.038
+2016,Anzahl Beschäftigte,0.0226,0.032
 2016,Wohneigentumsanteil,0.3416,0.001
 2016,Steuerfuss,0.3129,0.001
 2016,Steuerfuss JusPers,0.3687,0.001
 2016,Steuerkraft pro Kopf,0.6036,0.001
 2016,Steuerkraft/Steuerfuss,0.583,0.001
 2016,Jahresergebnis_per_capita,0.2567,0.001
-2016,Bauinvestition in Mio_per_capita,0.1065,0.025
+2016,Bauinvestition in Mio_per_capita,0.1065,0.02
 2016,Anzahl Beschäftigte_per_capita,0.2836,0.001
 2016,Steuerkraft in Mio_per_capita,0.6033,0.001
-2017,Bevölkerung,0.0368,0.043
-2017,Jahresergebnis,0.0493,0.136
+2017,Bevölkerung,0.0368,0.042
+2017,Jahresergebnis,0.0493,0.127
 2017,Gesundheitsaufwand pro Einwohner,0.3945,0.001
-2017,Bildungsaufwand pro Einwohner,0.1316,0.004
-2017,Bauinvestition pro Einwohner,0.0028,0.436
-2017,Bauinvestition in Mio,0.0117,0.075
-2017,Arbeitslosenquote,0.0503,0.033
-2017,Arbeitsstätten,0.0167,0.042
+2017,Bildungsaufwand pro Einwohner,0.1316,0.006
+2017,Bauinvestition pro Einwohner,0.0028,0.393
+2017,Bauinvestition in Mio,0.0117,0.092
+2017,Arbeitslosenquote,0.0503,0.032
+2017,Arbeitsstätten,0.0167,0.055
 2017,Anteil NatPers Steuer,0.3187,0.001
 2017,Anteil JurPers Stuer,0.3187,0.001
 2017,Sozialhilfequote,0.3247,0.001
-2017,Anzahl Neugründungen Unternehmen,0.018,0.038
-2017,Reingewinn JursPers in Mio,0.0202,0.055
+2017,Anzahl Neugründungen Unternehmen,0.018,0.034
+2017,Reingewinn JursPers in Mio,0.0202,0.039
 2017,Steuerbares Einkommen NatPers Median,0.3173,0.001
-2017,Steuerkraft Bereinigt,0.0433,0.033
-2017,Steuerkraft in Mio,0.0645,0.003
+2017,Steuerkraft Bereinigt,0.0433,0.021
+2017,Steuerkraft in Mio,0.0645,0.011
 2017,Steuerbaresvermögen Nat_Pers_Median,0.3702,0.001
-2017,Anzahl Beschäftigte,0.0217,0.048
+2017,Anzahl Beschäftigte,0.0217,0.045
 2017,Wohneigentumsanteil,0.3304,0.001
 2017,Steuerfuss,0.303,0.001
 2017,Steuerfuss JusPers,0.3584,0.001
 2017,Steuerkraft pro Kopf,0.5828,0.001
 2017,Steuerkraft/Steuerfuss,0.5784,0.001
-2017,Jahresergebnis_per_capita,0.2022,0.001
-2017,Bauinvestition in Mio_per_capita,-0.0009,0.424
+2017,Jahresergebnis_per_capita,0.2022,0.004
+2017,Bauinvestition in Mio_per_capita,-0.0009,0.435
 2017,Anzahl Beschäftigte_per_capita,0.2801,0.001
 2017,Steuerkraft in Mio_per_capita,0.5827,0.001
-2018,Bevölkerung,0.0367,0.026
-2018,Jahresergebnis,-0.0291,0.323
+2018,Bevölkerung,0.0367,0.048
+2018,Jahresergebnis,-0.0291,0.322
 2018,Gesundheitsaufwand pro Einwohner,0.3905,0.001
-2018,Bildungsaufwand pro Einwohner,0.0626,0.086
-2018,Bauinvestition pro Einwohner,-0.0264,0.348
-2018,Bauinvestition in Mio,0.0161,0.066
-2018,Arbeitslosenquote,0.0478,0.019
-2018,Arbeitsstätten,0.0166,0.056
+2018,Bildungsaufwand pro Einwohner,0.0626,0.091
+2018,Bauinvestition pro Einwohner,-0.0264,0.363
+2018,Bauinvestition in Mio,0.0161,0.079
+2018,Arbeitslosenquote,0.0478,0.039
+2018,Arbeitsstätten,0.0166,0.045
 2018,Anteil NatPers Steuer,0.369,0.001
 2018,Anteil JurPers Stuer,0.369,0.001
 2018,Sozialhilfequote,0.2904,0.001
-2018,Anzahl Neugründungen Unternehmen,0.0226,0.042
-2018,Reingewinn JursPers in Mio,0.0185,0.063
+2018,Anzahl Neugründungen Unternehmen,0.0226,0.045
+2018,Reingewinn JursPers in Mio,0.0185,0.051
 2018,Steuerbares Einkommen NatPers Median,0.3288,0.001
-2018,Steuerkraft Bereinigt,0.0408,0.026
-2018,Steuerkraft in Mio,0.0556,0.005
+2018,Steuerkraft Bereinigt,0.0408,0.029
+2018,Steuerkraft in Mio,0.0556,0.011
 2018,Steuerbaresvermögen Nat_Pers_Median,0.3461,0.001
-2018,Anzahl Beschäftigte,0.0207,0.039
+2018,Anzahl Beschäftigte,0.0207,0.054
 2018,Wohneigentumsanteil,0.3398,0.001
 2018,Steuerfuss,0.3229,0.001
 2018,Steuerfuss JusPers,0.3768,0.001
 2018,Steuerkraft pro Kopf,0.5625,0.001
 2018,Steuerkraft/Steuerfuss,0.5587,0.001
-2018,Jahresergebnis_per_capita,0.034,0.199
-2018,Bauinvestition in Mio_per_capita,-0.0285,0.352
+2018,Jahresergebnis_per_capita,0.034,0.189
+2018,Bauinvestition in Mio_per_capita,-0.0285,0.367
 2018,Anzahl Beschäftigte_per_capita,0.2755,0.001
 2018,Steuerkraft in Mio_per_capita,0.5619,0.001
-2019,Bevölkerung,0.0373,0.042
-2019,Jahresergebnis,0.1402,0.008
+2019,Bevölkerung,0.0373,0.043
+2019,Jahresergebnis,0.1402,0.003
 2019,Gesundheitsaufwand pro Einwohner,0.3635,0.001
-2019,Bildungsaufwand pro Einwohner,0.2079,0.001
-2019,Bauinvestition pro Einwohner,0.022,0.237
-2019,Bauinvestition in Mio,0.0268,0.065
-2019,Arbeitslosenquote,0.0463,0.032
-2019,Arbeitsstätten,0.0169,0.037
+2019,Bildungsaufwand pro Einwohner,0.2079,0.002
+2019,Bauinvestition pro Einwohner,0.022,0.236
+2019,Bauinvestition in Mio,0.0268,0.054
+2019,Arbeitslosenquote,0.0463,0.038
+2019,Arbeitsstätten,0.0169,0.041
 2019,Anteil NatPers Steuer,0.2624,0.001
 2019,Anteil JurPers Stuer,0.2624,0.001
 2019,Sozialhilfequote,0.2574,0.001
-2019,Anzahl Neugründungen Unternehmen,0.0211,0.032
-2019,Reingewinn JursPers in Mio,0.0303,0.032
+2019,Anzahl Neugründungen Unternehmen,0.0211,0.035
+2019,Reingewinn JursPers in Mio,0.0303,0.037
 2019,Steuerbares Einkommen NatPers Median,0.3385,0.001
-2019,Steuerkraft Bereinigt,0.0437,0.036
-2019,Steuerkraft in Mio,0.0638,0.008
+2019,Steuerkraft Bereinigt,0.0437,0.031
+2019,Steuerkraft in Mio,0.0638,0.007
 2019,Steuerbaresvermögen Nat_Pers_Median,0.3668,0.001
-2019,Anzahl Beschäftigte,0.0225,0.041
+2019,Anzahl Beschäftigte,0.0225,0.054
 2019,Wohneigentumsanteil,0.3453,0.001
 2019,Steuerfuss,0.321,0.001
 2019,Steuerfuss JusPers,0.376,0.001
 2019,Steuerkraft pro Kopf,0.5734,0.001
 2019,Steuerkraft/Steuerfuss,0.5499,0.001
-2019,Jahresergebnis_per_capita,0.1497,0.002
-2019,Bauinvestition in Mio_per_capita,0.0254,0.249
+2019,Jahresergebnis_per_capita,0.1497,0.003
+2019,Bauinvestition in Mio_per_capita,0.0254,0.234
 2019,Anzahl Beschäftigte_per_capita,0.278,0.001
 2019,Steuerkraft in Mio_per_capita,0.5735,0.001
-2020,Bevölkerung,0.0383,0.037
-2020,Jahresergebnis,0.0597,0.094
-2020,Gesundheitsaufwand pro Einwohner,0.1853,0.001
+2020,Bevölkerung,0.0383,0.029
+2020,Jahresergebnis,0.0597,0.101
+2020,Gesundheitsaufwand pro Einwohner,0.1853,0.002
 2020,Bildungsaufwand pro Einwohner,0.2043,0.001
-2020,Bauinvestition pro Einwohner,0.0482,0.125
-2020,Bauinvestition in Mio,0.0325,0.054
-2020,Arbeitslosenquote,0.0458,0.026
-2020,Arbeitsstätten,0.0173,0.041
+2020,Bauinvestition pro Einwohner,0.0482,0.108
+2020,Bauinvestition in Mio,0.0325,0.056
+2020,Arbeitslosenquote,0.0458,0.031
+2020,Arbeitsstätten,0.0173,0.049
 2020,Anteil NatPers Steuer,0.3518,0.001
 2020,Anteil JurPers Stuer,0.3518,0.001
 2020,Sozialhilfequote,0.3021,0.001
-2020,Anzahl Neugründungen Unternehmen,0.0194,0.051
-2020,Reingewinn JursPers in Mio,0.0117,0.025
+2020,Anzahl Neugründungen Unternehmen,0.0194,0.035
+2020,Reingewinn JursPers in Mio,0.0117,0.016
 2020,Steuerbares Einkommen NatPers Median,0.3507,0.001
-2020,Steuerkraft Bereinigt,0.0443,0.028
-2020,Steuerkraft in Mio,0.0642,0.005
+2020,Steuerkraft Bereinigt,0.0443,0.03
+2020,Steuerkraft in Mio,0.0642,0.013
 2020,Steuerbaresvermögen Nat_Pers_Median,0.3771,0.001
-2020,Anzahl Beschäftigte,0.0241,0.036
+2020,Anzahl Beschäftigte,0.0241,0.029
 2020,Wohneigentumsanteil,0.3352,0.001
 2020,Steuerfuss,0.297,0.001
 2020,Steuerfuss JusPers,0.3534,0.001
 2020,Steuerkraft pro Kopf,0.5755,0.001
 2020,Steuerkraft/Steuerfuss,0.5501,0.001
-2020,Jahresergebnis_per_capita,0.1676,0.002
-2020,Bauinvestition in Mio_per_capita,0.0481,0.132
+2020,Jahresergebnis_per_capita,0.1676,0.008
+2020,Bauinvestition in Mio_per_capita,0.0481,0.109
 2020,Anzahl Beschäftigte_per_capita,0.2991,0.001
 2020,Steuerkraft in Mio_per_capita,0.5751,0.001
-2021,Bevölkerung,0.0388,0.038
-2021,Jahresergebnis,-0.043,0.259
+2021,Bevölkerung,0.0388,0.027
+2021,Jahresergebnis,-0.043,0.242
 2021,Gesundheitsaufwand pro Einwohner,0.166,0.001
 2021,Bildungsaufwand pro Einwohner,0.2453,0.001
-2021,Bauinvestition pro Einwohner,0.0323,0.191
-2021,Bauinvestition in Mio,0.0296,0.05
-2021,Arbeitslosenquote,0.0533,0.033
-2021,Arbeitsstätten,0.0184,0.041
+2021,Bauinvestition pro Einwohner,0.0323,0.192
+2021,Bauinvestition in Mio,0.0296,0.036
+2021,Arbeitslosenquote,0.0533,0.029
+2021,Arbeitsstätten,0.0184,0.038
 2021,Anteil NatPers Steuer,0.3711,0.001
 2021,Anteil JurPers Stuer,0.3711,0.001
 2021,Sozialhilfequote,0.3013,0.001
-2021,Anzahl Neugründungen Unternehmen,0.0262,0.031
-2021,Reingewinn JursPers in Mio,0.0534,0.004
+2021,Anzahl Neugründungen Unternehmen,0.0262,0.028
+2021,Reingewinn JursPers in Mio,0.0534,0.006
 2021,Steuerbares Einkommen NatPers Median,0.3708,0.001
-2021,Steuerkraft Bereinigt,0.0465,0.025
+2021,Steuerkraft Bereinigt,0.0465,0.033
 2021,Steuerkraft in Mio,0.0694,0.004
 2021,Steuerbaresvermögen Nat_Pers_Median,0.3739,0.001
-2021,Anzahl Beschäftigte,0.0239,0.041
+2021,Anzahl Beschäftigte,0.0239,0.029
 2021,Wohneigentumsanteil,0.336,0.001
 2021,Steuerfuss,0.3072,0.001
 2021,Steuerfuss JusPers,0.3633,0.001
 2021,Steuerkraft pro Kopf,0.608,0.001
 2021,Steuerkraft/Steuerfuss,0.582,0.001
-2021,Jahresergebnis_per_capita,0.023,0.297
-2021,Bauinvestition in Mio_per_capita,0.0265,0.25
+2021,Jahresergebnis_per_capita,0.023,0.258
+2021,Bauinvestition in Mio_per_capita,0.0265,0.246
 2021,Anzahl Beschäftigte_per_capita,0.3082,0.001
 2021,Steuerkraft in Mio_per_capita,0.6086,0.001
-2022,Bevölkerung,0.0383,0.031
-2022,Jahresergebnis,0.0727,0.065
+2022,Bevölkerung,0.0383,0.044
+2022,Jahresergebnis,0.0727,0.061
 2022,Gesundheitsaufwand pro Einwohner,0.228,0.001
 2022,Bildungsaufwand pro Einwohner,0.2497,0.001
-2022,Bauinvestition pro Einwohner,-0.0003,0.425
-2022,Bauinvestition in Mio,0.0264,0.053
-2022,Arbeitslosenquote,0.0516,0.035
-2022,Arbeitsstätten,0.0181,0.048
+2022,Bauinvestition pro Einwohner,-0.0003,0.437
+2022,Bauinvestition in Mio,0.0264,0.045
+2022,Arbeitslosenquote,0.0516,0.032
+2022,Arbeitsstätten,0.0181,0.041
 2022,Anteil NatPers Steuer,0.3943,0.001
 2022,Anteil JurPers Stuer,0.3943,0.001
 2022,Sozialhilfequote,0.3252,0.001
-2022,Anzahl Neugründungen Unternehmen,0.0236,0.042
-2022,Reingewinn JursPers in Mio,0.0446,0.005
+2022,Anzahl Neugründungen Unternehmen,0.0236,0.04
+2022,Reingewinn JursPers in Mio,0.0446,0.006
 2022,Steuerbares Einkommen NatPers Median,0.3073,0.001
-2022,Steuerkraft Bereinigt,0.0445,0.025
-2022,Steuerkraft in Mio,0.0663,0.005
+2022,Steuerkraft Bereinigt,0.0445,0.023
+2022,Steuerkraft in Mio,0.0663,0.004
 2022,Steuerbaresvermögen Nat_Pers_Median,0.3659,0.001
-2022,Anzahl Beschäftigte,0.0228,0.045
+2022,Anzahl Beschäftigte,0.0228,0.039
 2022,Wohneigentumsanteil,0.346,0.001
 2022,Steuerfuss,0.3069,0.001
 2022,Steuerfuss JusPers,0.3641,0.001
 2022,Steuerkraft pro Kopf,0.5973,0.001
 2022,Steuerkraft/Steuerfuss,0.5813,0.001
-2022,Jahresergebnis_per_capita,-0.0202,0.368
-2022,Bauinvestition in Mio_per_capita,-0.0007,0.444
+2022,Jahresergebnis_per_capita,-0.0202,0.345
+2022,Bauinvestition in Mio_per_capita,-0.0007,0.441
 2022,Anzahl Beschäftigte_per_capita,0.2982,0.001
 2022,Steuerkraft in Mio_per_capita,0.5974,0.001

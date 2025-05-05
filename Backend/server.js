@@ -338,6 +338,133 @@ app.get("/api/gemeinde-adjacency", async (req, res) => {
   }
 })
 
+// Korrelationsanalyse
+app.get("/api/analyse/korrelationen", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM public.gemeinden_merged WHERE "Year" BETWEEN 2011 AND 2023
+    `)
+
+    const data = result.rows
+    const numericKeys = Object.keys(data[0]).filter(
+      k => typeof data[0][k] === "number" || (!isNaN(data[0][k]) && data[0][k] !== null)
+    ).filter(k => !["BFS", "Year"].includes(k))
+
+    const correlations = []
+
+    for (let i = 0; i < numericKeys.length; i++) {
+      for (let j = i + 1; j < numericKeys.length; j++) {
+        const a = numericKeys[i]
+        const b = numericKeys[j]
+        const x = []
+        const y = []
+        for (const row of data) {
+          const va = parseFloat(row[a])
+          const vb = parseFloat(row[b])
+          if (!isNaN(va) && !isNaN(vb)) {
+            x.push(va)
+            y.push(vb)
+          }
+        }
+        if (x.length < 5) continue
+        const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length
+        const meanX = mean(x), meanY = mean(y)
+        const cov = x.reduce((sum, xi, idx) => sum + (xi - meanX) * (y[idx] - meanY), 0)
+        const stdX = Math.sqrt(x.reduce((sum, xi) => sum + (xi - meanX) ** 2, 0))
+        const stdY = Math.sqrt(y.reduce((sum, yi) => sum + (yi - meanY) ** 2, 0))
+        const r = cov / (stdX * stdY)
+        correlations.push({ pair: `${a} vs ${b}`, r })
+      }
+    }
+
+    res.json(correlations.sort((a, b) => Math.abs(b.r) - Math.abs(a.r)))
+  } catch (err) {
+    console.error("Korrelation error:", err)
+    res.status(500).json({ error: "Internal server error" })
+  }
+})
+
+// Cluster Analyse
+app.get("/api/analyse/cluster", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT "GEBIET_NAME", "Steuerkraft pro Kopf", "Bauinvestition in Mio", "Anzahl Neugründungen Unternehmen"
+      FROM public.gemeinden_merged
+      WHERE "Year" = 2023
+    `)
+
+    const data = result.rows.filter(
+      r =>
+        typeof r["Steuerkraft pro Kopf"] === "number" &&
+        typeof r["Bauinvestition in Mio"] === "number" &&
+        typeof r["Anzahl Neugründungen Unternehmen"] === "number"
+    )
+
+    if (data.length < 3) return res.json([])
+
+    const vectors = data.map(d => [
+      d["Steuerkraft pro Kopf"],
+      d["Bauinvestition in Mio"],
+      d["Anzahl Neugründungen Unternehmen"]
+    ])
+
+    const k = 3
+    let centroids = vectors.slice(0, k)
+    let assignments = []
+
+    for (let iter = 0; iter < 5; iter++) {
+      assignments = vectors.map(v => {
+        const distances = centroids.map(c =>
+          Math.sqrt(c.reduce((sum, val, i) => sum + (val - v[i]) ** 2, 0))
+        )
+        return distances.indexOf(Math.min(...distances))
+      })
+      for (let i = 0; i < k; i++) {
+        const members = vectors.filter((_, idx) => assignments[idx] === i)
+        if (members.length > 0) {
+          centroids[i] = members[0].map((_, dim) =>
+            members.reduce((sum, v) => sum + v[dim], 0) / members.length
+          )
+        }
+      }
+    }
+
+    const clustered = data.map((row, i) => ({
+      ...row,
+      Cluster: assignments[i]
+    }))
+
+    res.json(clustered)
+  } catch (err) {
+    console.error("Cluster error:", err)
+    res.status(500).json({ error: "Internal error" })
+  }
+})
+
+// Ausreisser
+app.get("/api/analyse/outliers", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT "GEBIET_NAME", "Steuerkraft pro Kopf", "Anzahl Neugründungen Unternehmen"
+      FROM public.gemeinden_merged
+      WHERE "Year" = 2023
+    `)
+
+    const sorted = result.rows
+      .filter(r => r["Steuerkraft pro Kopf"] != null && r["Anzahl Neugründungen Unternehmen"] != null)
+      .sort((a, b) => b["Steuerkraft pro Kopf"] - a["Steuerkraft pro Kopf"])
+
+    const top = sorted.slice(0, 10)
+    const bottom = sorted.slice(-10)
+
+    res.json([...top, ...bottom])
+  } catch (err) {
+    console.error("Outlier error:", err)
+    res.status(500).json({ error: "Internal error" })
+  }
+})
+
+
 // ==========================
 // 🚀 Server Startup
 // ==========================
