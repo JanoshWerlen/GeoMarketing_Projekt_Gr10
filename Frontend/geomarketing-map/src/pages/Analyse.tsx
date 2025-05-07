@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
+  BarChart, Cell, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList
 } from "recharts"
+
 
 export default function AnalysePage() {
   const [correlations, setCorrelations] = useState<any[]>([])
@@ -13,9 +14,12 @@ export default function AnalysePage() {
       .then(res => res.json())
       .then(setCorrelations)
 
-    fetch("http://localhost:4000/api/analyse/cluster")
+      fetch("http://localhost:4000/api/analyse/cluster")
       .then(res => res.json())
-      .then(setClusters)
+      .then(data => {
+        console.log("CLUSTER DATA:", data)
+        setClusters(data)
+      })
 
     fetch("http://localhost:4000/api/analyse/outliers")
       .then(res => res.json())
@@ -28,20 +32,48 @@ export default function AnalysePage() {
 
       {/* Korrelationen */}
       <section className="mb-12">
-        <h2 className="text-xl font-semibold mb-4">Top-Korrelationen (|r| &gt; 0.6)</h2>
-        <ResponsiveContainer width="100%" height={400}>
-          <BarChart data={correlations.filter(c => Math.abs(c.r) > 0.6)}>
+        <h2 className="text-xl font-semibold mb-4">Top-Korrelationen (|r| ≥ 0.7)</h2>
+        <ResponsiveContainer width="100%" height={500}>
+          <BarChart
+            data={[...correlations]
+              .filter(c => Math.abs(c.r) >= 0.7)
+              .sort((a, b) => Math.abs(b.r) - Math.abs(a.r))
+            }
+            margin={{ top: 20, right: 30, left: 20, bottom: 120 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="pair" tick={{ fontSize: 10 }} interval={0} angle={-45} textAnchor="end" />
+            <XAxis
+              dataKey="pair"
+              interval={0}
+              angle={-60}
+              textAnchor="end"
+              tick={{ fontSize: 11 }}
+              height={120}
+            />
             <YAxis domain={[-1, 1]} />
             <Tooltip formatter={(value: number) => value.toFixed(2)} />
-            <Legend />
-            <Bar dataKey="r" fill="#4682b4">
-              <LabelList dataKey="r" position="top" formatter={(v: number) => v.toFixed(2)} />
+            <Bar dataKey="r" isAnimationActive={false} label={{
+              position: "top",
+              formatter: (val: number) => val.toFixed(2),
+              fill: "#333",
+              fontSize: 11,
+            }}>
+              {correlations
+                .filter(c => Math.abs(c.r) >= 0.7)
+                .sort((a, b) => Math.abs(b.r) - Math.abs(a.r))
+                .map((entry, index) => {
+                  const absR = Math.abs(entry.r)
+                  const colorIntensity = Math.floor(255 - absR * 150)
+                  const color = entry.r > 0
+                    ? `rgb(${colorIntensity}, ${colorIntensity}, 255)`     // blau für positiv
+                    : `rgb(255, ${colorIntensity}, ${colorIntensity})`     // rot für negativ
+                  return <Cell key={`cell-${index}`} fill={color} />
+                })}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
       </section>
+
 
       {/* Cluster */}
       <section className="mb-12">

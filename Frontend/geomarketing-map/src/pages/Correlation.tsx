@@ -14,6 +14,7 @@ import {
   CategoryScale
 } from "chart.js"
 import ChartDataLabels from "chartjs-plugin-datalabels"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts"
 
 ChartJS.register(LinearScale, PointElement, Tooltip, Legend, Title, LineElement, CategoryScale, ChartDataLabels)
 
@@ -36,6 +37,7 @@ export default function CorrelationPage() {
     intercept: number,
     equation: string
   } | null>(null)
+  const [topCorrelations, setTopCorrelations] = useState<any[]>([])
 
   useEffect(() => {
     fetch(`http://localhost:4000/api/gemeinden-kpis?year=${year}`)
@@ -56,7 +58,17 @@ export default function CorrelationPage() {
         }
       })
   }, [year])
-  
+
+  useEffect(() => {
+    fetch("http://localhost:4000/api/analyse/korrelationen")
+      .then(res => res.json())
+      .then(json => {
+        const filtered = json
+          .filter((c: any) => Math.abs(c.r) >= 0.7)
+          .sort((a: any, b: any) => Math.abs(b.r) - Math.abs(a.r))
+        setTopCorrelations(filtered)
+      })
+  }, [])
 
   useEffect(() => {
     if (mode === "average" && xKpi && yKpi) {
@@ -208,6 +220,51 @@ export default function CorrelationPage() {
   </div>
 )}
 
+      <section className="mb-10">
+        <h2 className="text-lg font-semibold mb-2">Top-Korrelationen (|r| ≥ 0.7)</h2>
+        <ResponsiveContainer width="100%" height={700}>
+          <BarChart
+            data={topCorrelations}
+            margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
+            onClick={({ activePayload }) => {
+              const pair = activePayload?.[0]?.payload?.pair
+              if (pair && pair.includes(" vs ")) {
+                const [a, b] = pair.split(" vs ")
+                setXKpi(a)
+                setYKpi(b)
+              }
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="pair"
+              interval={0}
+              angle={-60}
+              textAnchor="end"
+              tick={{ fontSize: 11 }}
+              height={250}
+            />
+            <YAxis domain={[-1, 1]} />
+            <RechartsTooltip formatter={(value: number) => value.toFixed(2)} />
+            <Bar dataKey="r" isAnimationActive={false}
+              label={{
+                position: "insideTop",
+                formatter: (val: number) => val.toFixed(2),
+                fill: "#000",
+                fontSize: 11
+              }}>
+              {topCorrelations.map((entry, index) => {
+                const absR = Math.abs(entry.r)
+                const colorIntensity = Math.floor(255 - absR * 150)
+                const color = entry.r > 0
+                  ? `rgb(${colorIntensity}, ${colorIntensity}, 255)` // blau für positiv
+                  : `rgb(255, ${colorIntensity}, ${colorIntensity})` // rot für negativ
+                return <Cell key={`cell-${index}`} fill={color} />
+              })}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </section>
 
       <div className="flex flex-wrap gap-4 items-center mb-6 bg-white rounded-xl shadow px-6 py-4">
         <label>KPI X:</label>
