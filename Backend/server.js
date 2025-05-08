@@ -338,6 +338,276 @@ app.get("/api/gemeinde-adjacency", async (req, res) => {
   }
 })
 
+// Korrelationsanalyse
+app.get("/api/analyse/korrelationen", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM public.gemeinden_merged WHERE "Year" BETWEEN 2011 AND 2023
+    `)
+
+    const data = result.rows
+    const numericKeys = Object.keys(data[0]).filter(
+      k => typeof data[0][k] === "number" || (!isNaN(data[0][k]) && data[0][k] !== null)
+    ).filter(k => !["BFS", "Year"].includes(k))
+
+    const correlations = []
+
+    for (let i = 0; i < numericKeys.length; i++) {
+      for (let j = i + 1; j < numericKeys.length; j++) {
+        const a = numericKeys[i]
+        const b = numericKeys[j]
+        const x = []
+        const y = []
+        for (const row of data) {
+          const va = parseFloat(row[a])
+          const vb = parseFloat(row[b])
+          if (!isNaN(va) && !isNaN(vb)) {
+            x.push(va)
+            y.push(vb)
+          }
+        }
+        if (x.length < 5) continue
+        const mean = arr => arr.reduce((a, b) => a + b, 0) / arr.length
+        const meanX = mean(x), meanY = mean(y)
+        const cov = x.reduce((sum, xi, idx) => sum + (xi - meanX) * (y[idx] - meanY), 0)
+        const stdX = Math.sqrt(x.reduce((sum, xi) => sum + (xi - meanX) ** 2, 0))
+        const stdY = Math.sqrt(y.reduce((sum, yi) => sum + (yi - meanY) ** 2, 0))
+        const r = cov / (stdX * stdY)
+        correlations.push({ pair: `${a} vs ${b}`, r })
+      }
+    }
+
+    res.json(correlations.sort((a, b) => Math.abs(b.r) - Math.abs(a.r)))
+  } catch (err) {
+    console.error("Korrelation error:", err)
+    res.status(500).json({ error: "Internal server error" })
+  }
+})
+
+// Cluster Analyse
+app.get("/api/analyse/cluster", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT "GEBIET_NAME", "Steuerkraft pro Kopf", "Bauinvestition in Mio", "Anzahl Neugründungen Unternehmen"
+      FROM public.gemeinden_merged
+      WHERE "Year" = 2023
+    `)
+
+    // Konvertiere Werte zu Zahlen & filtere unvollständige
+    const data = result.rows
+      .map(r => ({
+        name: r["GEBIET_NAME"],
+        steuerkraft: Number(r["Steuerkraft pro Kopf"]),
+        bau: Number(r["Bauinvestition in Mio"]),
+        neu: Number(r["Anzahl Neugründungen Unternehmen"]),
+      }))
+      .filter(r =>
+        !isNaN(r.steuerkraft) &&
+        !isNaN(r.bau) &&
+        !isNaN(r.neu)
+      )
+
+    if (data.length < 3) return res.json([])
+
+    // K-Means Light (3 Cluster, 5 Iterationen)
+    const vectors = data.map(d => [d.steuerkraft, d.bau, d.neu])
+    let centroids = vectors.slice(0, 3)
+    let assignments = []
+
+    for (let iter = 0; iter < 5; iter++) {
+      assignments = vectors.map(v => {
+        const distances = centroids.map(c =>
+          Math.sqrt(c.reduce((sum, val, i) => sum + (val - v[i]) ** 2, 0))
+        )
+        return distances.indexOf(Math.min(...distances))
+      })
+      for (let i = 0; i < 3; i++) {
+        const members = vectors.filter((_, idx) => assignments[idx] === i)
+        if (members.length > 0) {
+          centroids[i] = members[0].map((_, dim) =>
+            members.reduce((sum, v) => sum + v[dim], 0) / members.length
+          )
+        }
+      }
+    }
+
+    const clustered = data.map((d, i) => ({
+      GEBIET_NAME: d.name,
+      "Steuerkraft pro Kopf": d.steuerkraft,
+      "Bauinvestition in Mio": d.bau,
+      "Anzahl Neugründungen Unternehmen": d.neu,
+      Cluster: assignments[i],
+    }))
+
+    res.json(clustered)
+  } catch (err) {
+    console.error("❌ Cluster error:", err)
+    res.status(500).json({ error: "Cluster error" })
+  }
+})
+
+// Cluster-Mapping-API
+app.get("/api/analyse/cluster-map", async (req, res) => {
+  const year = parseInt(req.query.year)
+  if (!year) return res.status(400).json({ error: "Missing year" })
+
+  try {
+    const result = await pool.query(
+      `SELECT "BFS", "GEBIET_NAME", "Steuerkraft pro Kopf", "Bauinvestition in Mio", "Anzahl Neugründungen Unternehmen"
+       FROM public.gemeinden_merged WHERE "Year" = $1`, [year]
+    )
+
+    const data = result.rows.filter(r =>
+      !isNaN(Number(r["Steuerkraft pro Kopf"])) &&
+      !isNaN(Number(r["Bauinvestition in Mio"])) &&
+      !isNaN(Number(r["Anzahl Neugründungen Unternehmen"]))
+    )
+
+    const vectors = data.map(d => [
+      Number(d["Steuerkraft pro Kopf"]),
+      Number(d["Bauinvestition in Mio"]),
+      Number(d["Anzahl Neugründungen Unternehmen"])
+    ])
+
+    const k = 3
+    let centroids = vectors.slice(0, k)
+    let assignments = []
+
+    for (let iter = 0; iter < 5; iter++) {
+      assignments = vectors.map(v => {
+        const distances = centroids.map(c =>
+          Math.sqrt(c.reduce((sum, val, i) => sum + (val - v[i]) ** 2, 0))
+        )
+        return distances.indexOf(Math.min(...distances))
+      })
+      for (let i = 0; i < k; i++) {
+        const members = vectors.filter((_, idx) => assignments[idx] === i)
+        if (members.length > 0) {
+          centroids[i] = members[0].map((_, dim) =>
+            members.reduce((sum, v) => sum + v[dim], 0) / members.length
+          )
+        }
+      }
+    }
+
+    const mapped = data.map((row, i) => ({
+      BFS: row.BFS,
+      Cluster: assignments[i]
+    }))
+
+    res.json(mapped)
+  } catch (err) {
+    console.error("Cluster map error:", err)
+    res.status(500).json({ error: "Internal error" })
+  }
+})
+
+// KPI-Deviation-Map
+app.get("/api/analyse/kpi-deviation-map", async (req, res) => {
+  const { year, x, y } = req.query
+  if (!year || !x || !y) return res.status(400).json({ error: "Missing parameters" })
+
+  try {
+    const result = await pool.query(
+      `SELECT "BFS", "${x}", "${y}" FROM public.gemeinden_merged WHERE "Year" = $1`,
+      [year]
+    )
+
+    const data = result.rows.map(r => ({
+      BFS: r.BFS,
+      x: Number(r[x]),
+      y: Number(r[y])
+    })).filter(r => !isNaN(r.x) && !isNaN(r.y))
+
+    const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length
+    const meanX = mean(data.map(d => d.x))
+    const meanY = mean(data.map(d => d.y))
+    const stdX = Math.sqrt(data.reduce((sum, d) => sum + (d.x - meanX) ** 2, 0))
+    const cov = data.reduce((sum, d) => sum + (d.x - meanX) * (d.y - meanY), 0)
+    const slope = cov / (stdX ** 2)
+    const intercept = meanY - slope * meanX
+
+    const resultData = data.map(d => {
+      const expectedY = slope * d.x + intercept
+      return {
+        BFS: d.BFS,
+        deviation: d.y - expectedY
+      }
+    })
+
+    res.json(resultData)
+  } catch (err) {
+    console.error("Deviation map error:", err)
+    res.status(500).json({ error: "Internal error" })
+  }
+})
+
+// Ausreisser
+app.get("/api/analyse/outliers", async (req, res) => {
+  try {
+    const clusterResult = await pool.query(`
+      SELECT "GEBIET_NAME", "Steuerkraft pro Kopf", "Bauinvestition in Mio", "Anzahl Neugründungen Unternehmen"
+      FROM public.gemeinden_merged
+      WHERE "Year" = 2023
+    `)
+
+    const data = clusterResult.rows
+      .map(r => ({
+        name: r["GEBIET_NAME"],
+        steuerkraft: Number(r["Steuerkraft pro Kopf"]),
+        bau: Number(r["Bauinvestition in Mio"]),
+        neu: Number(r["Anzahl Neugründungen Unternehmen"])
+      }))
+      .filter(r =>
+        !isNaN(r.steuerkraft) &&
+        !isNaN(r.bau) &&
+        !isNaN(r.neu)
+      )
+
+    if (data.length < 3) return res.json([])
+
+    const vectors = data.map(d => [d.steuerkraft, d.bau, d.neu])
+    let centroids = vectors.slice(0, 3)
+    let assignments = []
+
+    for (let iter = 0; iter < 5; iter++) {
+      assignments = vectors.map(v => {
+        const distances = centroids.map(c =>
+          Math.sqrt(c.reduce((sum, val, i) => sum + (val - v[i]) ** 2, 0))
+        )
+        return distances.indexOf(Math.min(...distances))
+      })
+      for (let i = 0; i < 3; i++) {
+        const members = vectors.filter((_, idx) => assignments[idx] === i)
+        if (members.length > 0) {
+          centroids[i] = members[0].map((_, dim) =>
+            members.reduce((sum, v) => sum + v[dim], 0) / members.length
+          )
+        }
+      }
+    }
+
+    const withCluster = data.map((d, i) => ({
+      GEBIET_NAME: d.name,
+      "Steuerkraft pro Kopf": d.steuerkraft,
+      "Anzahl Neugründungen Unternehmen": d.neu,
+      Cluster: assignments[i]
+    }))
+
+    // Sortiere nach Steuerkraft absteigend
+    const sorted = withCluster.sort((a, b) => b["Steuerkraft pro Kopf"] - a["Steuerkraft pro Kopf"])
+
+    const top = sorted.slice(0, 10)
+    const bottom = sorted.slice(-10)
+
+    res.json([...top, ...bottom])
+  } catch (err) {
+    console.error("❌ Outlier error:", err)
+    res.status(500).json({ error: "Outlier error" })
+  }
+})
+
+
 // ==========================
 // 🚀 Server Startup
 // ==========================

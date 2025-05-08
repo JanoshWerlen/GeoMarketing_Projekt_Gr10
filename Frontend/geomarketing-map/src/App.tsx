@@ -3,6 +3,9 @@ import MapPage from "./pages/MapPage"
 import MoranChart from "./pages/MoranCharts"
 import CorrelationScatterPage from "./pages/Correlation"
 import GemeindeMoranMap from "./pages/GemeindeMoranMap"
+import AnalysePage from "./pages/Analyse"
+import MapClusterPage from "./pages/MapClusterPage"
+import MapDeviationPage from "./pages/MapDeviationPage"
 
 function NavBar() {
   const navigate = useNavigate()
@@ -41,6 +44,30 @@ function NavBar() {
       >
         Gemeinde Moran Map
       </button>
+      <button
+        className={`px-4 py-1 rounded-full transition font-semibold ${
+          location.pathname === "/analyse" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-blue-50"
+        }`}
+        onClick={() => navigate("/analyse")}
+      >
+        Analyse
+      </button>
+      <button
+        className={`px-4 py-1 rounded-full transition font-semibold ${
+          location.pathname === "/map-cluster" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-blue-50"
+        }`}
+        onClick={() => navigate("/map-cluster")}
+      >
+        Cluster Map
+      </button>
+      <button
+        className={`px-4 py-1 rounded-full transition font-semibold ${
+          location.pathname === "/map-deviation" ? "bg-blue-600 text-white shadow" : "bg-gray-100 text-gray-700 hover:bg-blue-50"
+        }`}
+        onClick={() => navigate("/map-deviation")}
+      >
+        KPI Abweichung
+      </button>
     </nav>
   )
 }
@@ -54,6 +81,9 @@ export default function App() {
         <Route path="/moran" element={<MoranChart />} />
         <Route path="/correlation" element={<CorrelationScatterPage />} />
         <Route path="/gemeinde-moran" element={<GemeindeMoranMap />} />
+        <Route path="/analyse" element={<AnalysePage />} />
+        <Route path="/map-cluster" element={<MapClusterPage />} />
+        <Route path="/map-deviation" element={<MapDeviationPage />} />
       </Routes>
     </BrowserRouter>
   )
