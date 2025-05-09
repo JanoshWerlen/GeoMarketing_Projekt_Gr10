@@ -163,6 +163,7 @@ export default function MapPage() {
   const [kpiList, setKpiList] = useState<string[]>([])
   const [selectedKpi, setSelectedKpi] = useState<string>("Steuerkraft pro Kopf")
   const [gemeindeTimeseries, setGemeindeTimeseries] = useState<any[] | null>(null)
+  const [playing, setPlaying] = useState(false)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setSelectedGemeinde(null)
@@ -222,6 +223,24 @@ export default function MapPage() {
     }
   }, [selectedGemeinde])
 
+  // Automatische Jahres-Animation
+  useEffect(() => {
+    if (!playing) return
+    const interval = setInterval(() => {
+      setYear(prev => {
+        if (prev >= 2023) {
+          clearInterval(interval)
+          setPlaying(false)
+          return 2023
+        }
+        return prev + 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [playing])
+
+
   useLayoutEffect(() => {
     const original = document.body.style.overflow
     document.body.style.overflow = "hidden"
@@ -253,15 +272,25 @@ export default function MapPage() {
           <select value={selectedKpi} onChange={(e) => setSelectedKpi(e.target.value)} className="min-w-[180px]">
             {kpiList.map((k) => <option key={k}>{k}</option>)}
           </select>
-          <label className="ml-6">Year: <span className="font-semibold text-blue-700">{year}</span></label>
-          <input
-            type="range"
-            min={2011}
-            max={2023}
-            value={year}
-            onChange={(e) => setYear(parseInt(e.target.value))}
-            className="w-32"
-          />
+          <div className="flex items-center gap-3">
+            <label className="ml-6">Jahr:
+              <input
+                type="range"
+                min={2011}
+                max={2023}
+                value={year}
+                onChange={(e) => setYear(parseInt(e.target.value))}
+                className="ml-2 w-40"
+              />
+            </label>
+            <span className="text-blue-700 font-semibold">{year}</span>
+            <button
+              onClick={() => setPlaying(p => !p)}
+              className="px-3 py-1 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+            >
+              {playing ? "⏹️" : "▶️"}
+            </button>
+          </div>
         </div>
       </div>
       <div className="flex-1 relative overflow-hidden">

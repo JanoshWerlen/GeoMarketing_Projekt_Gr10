@@ -3,7 +3,7 @@ const express = require("express")
 const cors = require("cors")
 const { Pool } = require("pg")
 require("dotenv").config()
-
+const format = require("pg-format")
 const app = express()
 const PORT = 4000 // you can change this
 
@@ -449,26 +449,28 @@ app.get("/api/analyse/cluster", async (req, res) => {
 // Cluster-Mapping-API
 app.get("/api/analyse/cluster-map", async (req, res) => {
   const year = parseInt(req.query.year)
-  if (!year) return res.status(400).json({ error: "Missing year" })
+  const x = req.query.x
+  const y = req.query.y
+
+  if (!year || !x || !y) {
+    return res.status(400).json({ error: "Missing parameters" })
+  }
 
   try {
-    const result = await pool.query(
-      `SELECT "BFS", "GEBIET_NAME", "Steuerkraft pro Kopf", "Bauinvestition in Mio", "Anzahl Neugründungen Unternehmen"
-       FROM public.gemeinden_merged WHERE "Year" = $1`, [year]
+    const sql = format(
+      `SELECT "BFS", "GEBIET_NAME", %I AS x, %I AS y
+       FROM public.gemeinden_merged
+       WHERE "Year" = %L`,
+      x, y, year
     )
+
+    const result = await pool.query(sql)
 
     const data = result.rows.filter(r =>
-      !isNaN(Number(r["Steuerkraft pro Kopf"])) &&
-      !isNaN(Number(r["Bauinvestition in Mio"])) &&
-      !isNaN(Number(r["Anzahl Neugründungen Unternehmen"]))
+      !isNaN(Number(r.x)) && !isNaN(Number(r.y))
     )
 
-    const vectors = data.map(d => [
-      Number(d["Steuerkraft pro Kopf"]),
-      Number(d["Bauinvestition in Mio"]),
-      Number(d["Anzahl Neugründungen Unternehmen"])
-    ])
-
+    const vectors = data.map(d => [Number(d.x), Number(d.y)])
     const k = 3
     let centroids = vectors.slice(0, k)
     let assignments = []
@@ -492,7 +494,9 @@ app.get("/api/analyse/cluster-map", async (req, res) => {
 
     const mapped = data.map((row, i) => ({
       BFS: row.BFS,
-      Cluster: assignments[i]
+      Cluster: assignments[i],
+      valA: row.x,
+      valB: row.y
     }))
 
     res.json(mapped)
