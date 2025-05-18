@@ -38,6 +38,10 @@ export default function CorrelationPage() {
     equation: string
   } | null>(null)
   const [topCorrelations, setTopCorrelations] = useState<any[]>([])
+  const steuerKeywords = [
+    "Steuer", "Steuerkraft", "Steuerfuss", "Steuerbares", "Reingewinn"
+  ]
+
 
   useEffect(() => {
     fetch(`http://localhost:4000/api/gemeinden-kpis?year=${year}`)
@@ -63,12 +67,23 @@ export default function CorrelationPage() {
     fetch("http://localhost:4000/api/analyse/korrelationen")
       .then(res => res.json())
       .then(json => {
+        const steuerKeywords = [
+          "Steuer", "Steuerkraft", "Steuerfuss", "Steuerbares", "Reingewinn"
+        ]
+
         const filtered = json
-          .filter((c: any) => Math.abs(c.r) >= 0.7)
+          .filter((c: any) => {
+            const r = c.r
+            if (typeof r !== "number" || Math.abs(r) < 0.5 || Math.abs(r) > 0.99) return false
+            return steuerKeywords.some(keyword => c.pair.includes(keyword))
+          })
           .sort((a: any, b: any) => Math.abs(b.r) - Math.abs(a.r))
+          .slice(0, 15)
+
         setTopCorrelations(filtered)
       })
   }, [])
+
 
   useEffect(() => {
     if (mode === "average" && xKpi && yKpi) {
@@ -213,9 +228,6 @@ export default function CorrelationPage() {
 
       {correlation && (
   <div className="mb-4 px-6 py-3 bg-blue-50 rounded shadow flex flex-wrap gap-x-12 gap-y-2 items-center text-blue-900">
-    <div className="flex items-center">
-      <b>Pearson r:</b>&nbsp;<span className="inline-block min-w-[80px]">{correlation.r.toFixed(3)}</span>
-    </div>
 
   </div>
 )}

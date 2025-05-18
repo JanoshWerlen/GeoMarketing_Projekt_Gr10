@@ -297,6 +297,7 @@ export default function GemeindeMoranMap() {
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden">
+      <h1 className="text-xl font-bold mb-4 text-blue-900">Gemeinde Karte Moran</h1>
       <div className="p-4 bg-white shadow rounded-xl z-10 flex-shrink-0 mb-4">
         <div className="flex gap-4 items-center flex-wrap">
           <label className="font-semibold mr-2">KPI:</label>
