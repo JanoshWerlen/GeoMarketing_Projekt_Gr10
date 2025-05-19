@@ -492,12 +492,28 @@ app.get("/api/analyse/cluster-map", async (req, res) => {
       }
     }
 
-    const mapped = data.map((row, i) => ({
-      BFS: row.BFS,
-      Cluster: assignments[i],
-      valA: row.x,
-      valB: row.y
-    }))
+  // 1. Cluster-Zentren mit Index & Mittelwert berechnen
+  const clusterStats = centroids.map((c, i) => ({
+    index: i,
+    mean: c[0] + c[1], // Summe von X + Y als "Stärke"
+  }))
+
+  // 2. Cluster nach Stärke sortieren
+  clusterStats.sort((a, b) => a.mean - b.mean)
+
+  // 3. Mapping von Original → neuer Cluster-Index
+  const indexMap = new Map()
+  clusterStats.forEach((c, newIdx) => {
+    indexMap.set(c.index, newIdx)
+  })
+
+  // 4. Cluster-Daten mit remapptem Index zurückgeben
+  const mapped = data.map((row, i) => ({
+    BFS: row.BFS,
+    Cluster: indexMap.get(assignments[i]), // stabile Zuordnung
+    valA: row.x,
+    valB: row.y
+  }))
 
     res.json(mapped)
   } catch (err) {

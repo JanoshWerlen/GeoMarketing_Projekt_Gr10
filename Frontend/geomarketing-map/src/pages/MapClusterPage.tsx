@@ -27,14 +27,6 @@ const clusterCombos = [
       "Zeigt den Einfluss von Unternehmensgewinnen auf das Gesamtsteueraufkommen. Gemeinden mit hohen Unternehmensgewinnen bilden eigene Cluster – typisch für Unternehmenszentren.",
   },
   {
-    key: "arbeitslosigkeit-vs-steuerkraft",
-    label: "Arbeitslosenquote vs. Steuerkraft bereinigt",
-    kpiA: "Arbeitslosenquote",
-    kpiB: "Steuerkraft Bereinigt",
-    description:
-      "Stellt wirtschaftliche Schwäche (Arbeitslosigkeit) der fiskalischen Leistungsfähigkeit gegenüber. Cluster trennen tendenziell strukturstarke von strukturschwachen Gemeinden.",
-  },
-  {
     key: "gründung-vs-steuerkraft",
     label: "Neugründungen vs. Steuerkraft (Mio)",
     kpiA: "Anzahl Neugründungen Unternehmen",
@@ -49,15 +41,7 @@ const clusterCombos = [
     kpiB: "Steuerkraft in Mio",
     description:
       "Verbindet bauliche Entwicklung mit fiskaler Stärke. Cluster trennen boomende Wachstumsgemeinden (viel Bau, hohe Einnahmen) von eher stabilen oder rückläufigen Regionen.",
-  },
-  {
-    key: "steuerpk-vs-effizienz",
-    label: "Steuerkraft pro Kopf vs. Steuerkraft/Steuerfuss",
-    kpiA: "Steuerkraft pro Kopf",
-    kpiB: "Steuerkraft/Steuerfuss",
-    description:
-      "Vergleicht individuelle Steuerleistung (pro Kopf) mit Effizienz der Steuererhebung. Hohe Werte bei beiden: reiche, effizient wirtschaftende Gemeinden. Cluster zeigen Reichtum vs. hohe Belastung.",
-  },
+  }
 ]
 
 const clusterLegends: Record<string, string[]> = {
@@ -71,11 +55,6 @@ const clusterLegends: Record<string, string[]> = {
     "mäßige Gewinne und Steuereinnahmen",
     "hoher Reingewinn & hohe Steuerkraft (Zentrumsgemeinden)"
   ],
-  "arbeitslosigkeit-vs-steuerkraft": [
-    "hohe Arbeitslosigkeit, tiefe Steuerkraft (strukturschwach)",
-    "durchschnittliche Verhältnisse",
-    "niedrige Arbeitslosigkeit, hohe Steuerkraft (stark)"
-  ],
   "gründung-vs-steuerkraft": [
     "wenig Neugründungen, tiefe Steuerkraft",
     "mäßige Dynamik",
@@ -86,11 +65,6 @@ const clusterLegends: Record<string, string[]> = {
     "durchschnittliche Entwicklung",
     "viel Bau & hohe Steuerkraft (Wachstum)"
   ],
-  "steuerpk-vs-effizienz": [
-    "tiefer Pro-Kopf-Wert & geringe Effizienz",
-    "mittelmäßige Steuerertragsstruktur",
-    "hoher Pro-Kopf-Wert & effiziente Steuererhebung"
-  ]
 }
 
 function getPolygonCentroid(coords: number[][]) {
@@ -188,42 +162,17 @@ export default function MapClusterPage() {
     fetch(`http://localhost:4000/api/analyse/cluster-map?year=${year}&x=${encodeURIComponent(activeCombo.kpiA)}&y=${encodeURIComponent(activeCombo.kpiB)}`)
       .then(res => res.json())
       .then(data => {
-        // 1. Werte gruppieren nach Cluster
-        const clusterSums: Record<number, number[]> = {}
-        data.forEach((d: any) => {
-          if (!clusterSums[d.Cluster]) clusterSums[d.Cluster] = [0, 0]
-          clusterSums[d.Cluster][0] += d.valA
-          clusterSums[d.Cluster][1] += d.valB
-        })
-
-        // 2. Summen berechnen & Cluster sortieren
-        const sortedClusters = Object.entries(clusterSums)
-          .map(([cluster, [sumA, sumB]]) => ({
-            oldCluster: parseInt(cluster),
-            total: sumA + sumB
-          }))
-          .sort((a, b) => a.total - b.total)
-
-        // 3. Neue Cluster-IDs zuweisen (schwächster = 0, stärkster = 2)
-        const remap: Record<number, number> = {}
-        sortedClusters.forEach((entry, index) => {
-          remap[entry.oldCluster] = index
-        })
-
-        // 4. Cluster neu mappen
         const map: Record<string, { cluster: number, valA: number, valB: number }> = {}
         data.forEach((d: any) => {
           const bfs = String(d.BFS)
           map[bfs] = {
-            cluster: remap[d.Cluster], // <- hier passiert die Umnummerierung
+            cluster: d.Cluster,
             valA: d.valA,
             valB: d.valB
           }
         })
-
         setClusterData(map)
       })
-
   }, [year, activeCombo])
 
   useEffect(() => {
@@ -353,8 +302,18 @@ export default function MapClusterPage() {
                   {selectedGemeinde.name}
                 </h2>
                 <p><strong>Cluster:</strong> {selectedGemeinde.cluster}</p>
-                <p><strong>{activeCombo.kpiA}:</strong> {selectedGemeinde.valA?.toFixed(2)}</p>
-                <p><strong>{activeCombo.kpiB}:</strong> {selectedGemeinde.valB?.toFixed(2)}</p>
+                <p>
+                  <strong>{activeCombo.kpiA}:</strong>{" "}
+                  {typeof selectedGemeinde.valA === "number" && !isNaN(selectedGemeinde.valA)
+                    ? selectedGemeinde.valA.toFixed(2)
+                    : "—"}
+                </p>
+                <p>
+                  <strong>{activeCombo.kpiB}:</strong>{" "}
+                  {typeof selectedGemeinde.valB === "number" && !isNaN(selectedGemeinde.valB)
+                    ? selectedGemeinde.valB.toFixed(2)
+                    : "—"}
+                </p>
               </>
             )}
           </div>
