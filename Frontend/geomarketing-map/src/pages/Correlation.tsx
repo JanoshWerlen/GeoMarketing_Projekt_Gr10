@@ -38,10 +38,6 @@ export default function CorrelationPage() {
     equation: string
   } | null>(null)
   const [topCorrelations, setTopCorrelations] = useState<any[]>([])
-  const steuerKeywords = [
-    "Steuer", "Steuerkraft", "Steuerfuss", "Steuerbares", "Reingewinn"
-  ]
-
 
   useEffect(() => {
     fetch(`http://localhost:4000/api/gemeinden-kpis?year=${year}`)

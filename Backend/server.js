@@ -229,7 +229,8 @@ app.get("/api/gemeinden-kpis", async (req, res) => {
 
 const Cursor = require("pg-cursor");
 
-// Stream all Gemeinde KPIs for all years (large data)
+// Stream all Gemeinde KPIs for all years (large data) (nicht benötigt momentan)
+/*
 app.get("/api/gemeinden-kpis-all", async (req, res) => {
   try {
     const client = await pool.connect();
@@ -269,6 +270,43 @@ app.get("/api/gemeinden-kpis-all", async (req, res) => {
     res.status(500).json({ error: "Internal error" });
   }
 });
+*/
+
+// GET /api/kpi-thresholds
+app.get("/api/kpi-thresholds", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT * FROM public.gemeinden_merged 
+      WHERE "Year" BETWEEN 2011 AND 2023
+    `)
+
+    const data = result.rows
+
+    const numericKeys = Object.keys(data[0])
+      .filter(k => typeof data[0][k] === "number" || (!isNaN(data[0][k]) && data[0][k] !== null))
+      .filter(k => !["BFS", "Year", "AREA_ROUND"].includes(k))
+
+    const thresholds = {}
+
+    for (const key of numericKeys) {
+      const values = data.map(d => parseFloat(d[key])).filter(v => !isNaN(v))
+      if (values.length < 10) continue
+
+      values.sort((a, b) => a - b)
+      const deciles = []
+      for (let i = 1; i < 10; i++) {
+        const idx = Math.floor(i * values.length / 10)
+        deciles.push(values[idx])
+      }
+      thresholds[key] = deciles
+    }
+
+    res.json(thresholds)
+  } catch (err) {
+    console.error("❌ KPI threshold error:", err)
+    res.status(500).json({ error: "Threshold error" })
+  }
+})
 
 // GET /api/gemeinden-kpi-averages
 app.get("/api/gemeinden-kpi-averages", async (req, res) => {
@@ -306,7 +344,9 @@ app.get("/api/gemeinden-geojson", (req, res) => {
   res.json(convertNumericStrings(cache.geojson[year]))
 })
 
-// GET /api/gemeinde-adjacency
+// GET /api/gemeinde-adjacency (Nicht benötigt momentan)
+
+/*
 app.get("/api/gemeinde-adjacency", async (req, res) => {
   try {
     // Query all Gemeinde geometries for the latest year (adjust as needed)
@@ -337,6 +377,7 @@ app.get("/api/gemeinde-adjacency", async (req, res) => {
     res.status(500).json({ error: "Internal server error" })
   }
 })
+*/
 
 // Korrelationsanalyse
 app.get("/api/analyse/korrelationen", async (req, res) => {
@@ -384,7 +425,8 @@ app.get("/api/analyse/korrelationen", async (req, res) => {
   }
 })
 
-// Cluster Analyse
+// Cluster Analyse (Nicht benötigt momentan)
+/*
 app.get("/api/analyse/cluster", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -445,12 +487,15 @@ app.get("/api/analyse/cluster", async (req, res) => {
     res.status(500).json({ error: "Cluster error" })
   }
 })
+*/
 
 // Cluster-Mapping-API
 app.get("/api/analyse/cluster-map", async (req, res) => {
   const year = parseInt(req.query.year)
   const x = req.query.x
   const y = req.query.y
+
+  console.log("KPI X:", x, "| KPI Y:", y)
 
   if (!year || !x || !y) {
     return res.status(400).json({ error: "Missing parameters" })
@@ -492,25 +537,21 @@ app.get("/api/analyse/cluster-map", async (req, res) => {
       }
     }
 
-  // 1. Cluster-Zentren mit Index & Mittelwert berechnen
   const clusterStats = centroids.map((c, i) => ({
     index: i,
     mean: c[0] + c[1], // Summe von X + Y als "Stärke"
   }))
 
-  // 2. Cluster nach Stärke sortieren
   clusterStats.sort((a, b) => a.mean - b.mean)
 
-  // 3. Mapping von Original → neuer Cluster-Index
   const indexMap = new Map()
   clusterStats.forEach((c, newIdx) => {
     indexMap.set(c.index, newIdx)
   })
 
-  // 4. Cluster-Daten mit remapptem Index zurückgeben
   const mapped = data.map((row, i) => ({
     BFS: row.BFS,
-    Cluster: indexMap.get(assignments[i]), // stabile Zuordnung
+    Cluster: indexMap.get(assignments[i]),
     valA: row.x,
     valB: row.y
   }))
@@ -562,7 +603,8 @@ app.get("/api/analyse/kpi-deviation-map", async (req, res) => {
   }
 })
 
-// Ausreisser
+// Ausreisser (Nicht benötigt momentan)
+/*
 app.get("/api/analyse/outliers", async (req, res) => {
   try {
     const clusterResult = await pool.query(`
@@ -626,6 +668,7 @@ app.get("/api/analyse/outliers", async (req, res) => {
     res.status(500).json({ error: "Outlier error" })
   }
 })
+*/
 
 
 // ==========================

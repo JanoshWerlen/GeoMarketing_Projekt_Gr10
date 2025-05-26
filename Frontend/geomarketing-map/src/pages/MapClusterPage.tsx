@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from "react-leaflet"
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import { useMap } from "react-leaflet"
 import L from "leaflet"
@@ -11,6 +11,14 @@ const clusterColors = ["#377eb8", "#4daf4a", "#ff7f00"]
 // Definierte spannende Clusterkombinationen
 const clusterCombos = [
   {
+    key: "steuerkraft-vs-gewinn",
+    label: "Steuerkraft (Mio) vs. Reingewinn jur. Personen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Reingewinn JursPers in Mio",
+    description:
+      "Zeigt den Einfluss von Unternehmensgewinnen auf das Gesamtsteueraufkommen. Gemeinden mit hohen Unternehmensgewinnen bilden eigene Cluster – typisch für Unternehmenszentren.",
+  },
+  {
     key: "steuerkraft-vs-beschaeftigte",
     label: "Steuerkraft (Mio) vs. Anzahl Beschäftigte",
     kpiA: "Steuerkraft in Mio",
@@ -19,52 +27,70 @@ const clusterCombos = [
       "Vergleicht das Steueraufkommen einer Gemeinde mit der Zahl der Erwerbstätigen. Erwartung: Gemeinden mit vielen Arbeitsplätzen haben mehr Steuereinnahmen. Cluster trennen typische Wohnorte von Wirtschaftsstandorten.",
   },
   {
-    key: "gewinn-vs-steuerkraft",
-    label: "Reingewinn jur. Personen vs. Steuerkraft (Mio)",
-    kpiA: "Reingewinn JursPers in Mio",
-    kpiB: "Steuerkraft in Mio",
-    description:
-      "Zeigt den Einfluss von Unternehmensgewinnen auf das Gesamtsteueraufkommen. Gemeinden mit hohen Unternehmensgewinnen bilden eigene Cluster – typisch für Unternehmenszentren.",
-  },
-  {
-    key: "gründung-vs-steuerkraft",
-    label: "Neugründungen vs. Steuerkraft (Mio)",
-    kpiA: "Anzahl Neugründungen Unternehmen",
-    kpiB: "Steuerkraft in Mio",
+    key: "steuerkraft-vs-gründung",
+    label: "Steuerkraft (Mio) vs. Neugründungen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Anzahl Neugründungen Unternehmen",
     description:
       "Misst, ob innovationsfreundliche Standorte (viele Neugründungen) gleichzeitig hohe Steuerkraft aufweisen. Cluster zeigen: wirtschaftsdynamische vs. stagnierende Gemeinden.",
   },
   {
-    key: "bau-vs-steuerkraft",
-    label: "Bauinvestitionen vs. Steuerkraft (Mio)",
-    kpiA: "Bauinvestition in Mio",
-    kpiB: "Steuerkraft in Mio",
+    key: "steuerkraft-vs-bau",
+    label: "Steuerkraft (Mio) vs. Bauinvestitionen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Bauinvestition in Mio",
     description:
       "Verbindet bauliche Entwicklung mit fiskaler Stärke. Cluster trennen boomende Wachstumsgemeinden (viel Bau, hohe Einnahmen) von eher stabilen oder rückläufigen Regionen.",
+  },
+  {
+    key: "steuerpk-vs-gewinn",
+    label: "Steuerkraft pro Kopf vs. Reingewinn jur. Personen",
+    kpiA: "Steuerkraft pro Kopf",
+    kpiB: "Reingewinn JursPers in Mio",
+    description:
+      "Stellt individuelle Steuerkraft der Bevölkerung dem Gewinn von juristischen Personen gegenüber. Spannend für Orte mit hohem Unternehmensanteil und wohlhabender Bevölkerung."
+  },
+  {
+    key: "steuerpk-vs-bau",
+    label: "Steuerkraft pro Kopf vs. Bauinvestitionen",
+    kpiA: "Steuerkraft pro Kopf",
+    kpiB: "Bauinvestition in Mio",
+    description:
+      "Verbindet individuelle Steuerkraft mit baulicher Dynamik. Gibt Hinweise auf wachsende, wohlhabende Gemeinden mit hoher Bautätigkeit."
   }
 ]
 
 const clusterLegends: Record<string, string[]> = {
+    "steuerkraft-vs-gewinn": [
+    "tiefe Steuerkraft, geringer Unternehmensgewinn",
+    "mäßige Stuereinnahmen und Gewinne",
+    "hohe Steuerkraft & hoher Reingewinn (Zentrumsgemeinden)"
+  ],
   "steuerkraft-vs-beschaeftigte": [
     "wenig Beschäftigte & tiefe Steuerkraft",
     "durchschnittliche Wirtschaftsleistung",
     "viele Beschäftigte & hohe Steuerkraft"
   ],
-  "gewinn-vs-steuerkraft": [
-    "geringer Unternehmensgewinn, tiefe Steuerkraft",
-    "mäßige Gewinne und Steuereinnahmen",
-    "hoher Reingewinn & hohe Steuerkraft (Zentrumsgemeinden)"
-  ],
-  "gründung-vs-steuerkraft": [
-    "wenig Neugründungen, tiefe Steuerkraft",
+  "steuerkraft-vs-gründung": [
+    "tiefe Steuerkraft, wenig Neugründungen",
     "mäßige Dynamik",
-    "viele Gründungen & hohe Steuerkraft (dynamisch)"
+    "hohe Steuerkraft & viele Gründungen (dynamisch)"
   ],
-  "bau-vs-steuerkraft": [
-    "wenig Bauaktivität & tiefe Steuerkraft",
+  "steuerkraft-vs-bau": [
+    "tiefe Steuerkraft & wenig Bauaktivität",
     "durchschnittliche Entwicklung",
-    "viel Bau & hohe Steuerkraft (Wachstum)"
+    "hohe Steuerkraft & viel Bau (Wachstum)"
   ],
+    "steuerpk-vs-gewinn": [
+    "tiefe Pro-Kopf-Steuerkraft, wenig Gewinn",
+    "durchschnittliche Werte",
+    "hohe Pro-Kopf-Steuerkraft & hohe Gewinne (reiche Unternehmenszentren)"
+  ],
+  "steuerpk-vs-bau": [
+    "wenig Bau & tiefe Steuerkraft pro Kopf",
+    "durchschnittliche Entwicklung",
+    "viel Bau & hohe Steuerkraft pro Kopf (Wachstumsgemeinden)"
+  ]
 }
 
 function getPolygonCentroid(coords: number[][]) {
@@ -167,8 +193,8 @@ export default function MapClusterPage() {
           const bfs = String(d.BFS)
           map[bfs] = {
             cluster: d.Cluster,
-            valA: d.valA,
-            valB: d.valB
+            valA: Number(d.valA),
+            valB: Number(d.valB),
           }
         })
         setClusterData(map)

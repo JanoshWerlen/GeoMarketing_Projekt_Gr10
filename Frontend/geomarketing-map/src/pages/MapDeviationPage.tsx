@@ -1,11 +1,21 @@
 import { useEffect, useState } from "react"
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet"
+import { MapContainer, TileLayer, } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import { useMap } from "react-leaflet"
 import L from "leaflet"
+import { DeviationLayer } from "./DeviationLayer"
+
 
 // KPI-Kombis analog zur Clusterkarte
 const deviationCombos = [
+  {
+    key: "steuerkraft-vs-gewinn",
+    label: "Steuerkraft (Mio) vs. Reingewinn jur. Personen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Reingewinn JursPers in Mio",
+    description:
+      "Zeigt, ob die Steuerkraft mit den Unternehmensgewinnen übereinstimmt oder stark abweicht – Hinweis auf fiskalische Sondereffekte.",
+  },
   {
     key: "steuerkraft-vs-beschaeftigte",
     label: "Steuerkraft (Mio) vs. Anzahl Beschäftigte",
@@ -15,28 +25,36 @@ const deviationCombos = [
       "Zeigt Gemeinden, deren Steuerkraft höher oder tiefer ist als es aufgrund der Beschäftigtenzahl zu erwarten wäre.",
   },
   {
-    key: "gewinn-vs-steuerkraft",
-    label: "Reingewinn jur. Personen vs. Steuerkraft (Mio)",
-    kpiA: "Reingewinn JursPers in Mio",
-    kpiB: "Steuerkraft in Mio",
-    description:
-      "Zeigt, ob die Steuerkraft mit den Unternehmensgewinnen übereinstimmt oder stark abweicht – Hinweis auf fiskalische Sondereffekte.",
-  },
-  {
-    key: "gründung-vs-steuerkraft",
-    label: "Neugründungen vs. Steuerkraft (Mio)",
-    kpiA: "Anzahl Neugründungen Unternehmen",
-    kpiB: "Steuerkraft in Mio",
+    key: "steuerkraft-vs-gründung",
+    label: "Steuerkraft (Mio) vs. Neugründungen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Anzahl Neugründungen Unternehmen",
     description:
       "Gemeinden mit vielen Gründungen aber tiefer Steuerkraft (oder umgekehrt) werden sichtbar – wirtschaftliches Potenzial vs. Realität.",
   },
   {
-    key: "bau-vs-steuerkraft",
-    label: "Bauinvestitionen vs. Steuerkraft (Mio)",
-    kpiA: "Bauinvestition in Mio",
-    kpiB: "Steuerkraft in Mio",
+    key: "steuerkraft-vs-bau",
+    label: "Steuerkraft (Mio) vs. Bauinvestitionen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Bauinvestition in Mio",
     description:
       "Vergleicht Bautätigkeit mit der Steuerkraft: Investitionen ohne fiskalen Rückfluss oder umgekehrt werden sichtbar.",
+  },
+  {
+    key: "steuerkopfk-vs-gewinn",
+    label: "Steuerkraft pro Kopf vs. Reingewinn jur. Personen",
+    kpiA: "Steuerkraft pro Kopf",
+    kpiB: "Reingewinn JursPers in Mio",
+    description:
+      "Gemeinden, deren Steuerkraft pro Kopf stark vom erwartbaren Niveau basierend auf Unternehmensgewinnen abweicht – Hinweis auf spezielle fiskale Rahmenbedingungen.",
+  },
+  {
+    key: "steuerkopfk-vs-bau",
+    label: "Steuerkraft pro Kopf vs. Bauinvestitionen",
+    kpiA: "Steuerkraft pro Kopf",
+    kpiB: "Bauinvestition in Mio",
+    description:
+      "Vergleicht Steuerkraft pro Kopf mit der Bautätigkeit – sichtbar werden Investitionsgemeinden ohne proportionalen fiskalen Rückfluss (oder umgekehrt).",
   }
 ]
 
@@ -121,30 +139,59 @@ export default function MapDeviationPage() {
   const [selectedGemeinde, setSelectedGemeinde] = useState<any>(null)
   const [showLabels, setShowLabels] = useState(true)
   const [activeCombo, setActiveCombo] = useState(deviationCombos[0])
+  const [maxDeviation, setMaxDeviation] = useState(200)
 
   const kpiA = activeCombo.kpiA
   const kpiB = activeCombo.kpiB
 
   // Daten laden
   useEffect(() => {
-    fetch(`http://localhost:4000/api/gemeinden-geojson?year=${year}`)
+    if (!activeCombo) return
+
+    const controller = new AbortController()
+    const signal = controller.signal
+
+    const { kpiA, kpiB } = activeCombo
+
+    // Debug:
+    console.log(`Request for: year=${year}, kpiA=${kpiA}, kpiB=${kpiB}`)
+
+    fetch(`http://localhost:4000/api/gemeinden-geojson?year=${year}`, { signal })
       .then(res => res.json())
       .then(setGeoData)
+      .catch(err => {
+        if (err.name !== "AbortError") console.error(err)
+      })
 
-    fetch(`http://localhost:4000/api/analyse/kpi-deviation-map?year=${year}&x=${encodeURIComponent(kpiA)}&y=${encodeURIComponent(kpiB)}`)
+    fetch(`http://localhost:4000/api/analyse/kpi-deviation-map?year=${year}&x=${encodeURIComponent(kpiA)}&y=${encodeURIComponent(kpiB)}`, { signal })
       .then(res => res.json())
       .then(data => {
         const map: Record<string, number> = {}
+        let maxDev = 0
+
         data.forEach((d: any) => {
           map[d.BFS] = d.deviation
+          const absDev = Math.abs(d.deviation)
+          if (absDev > maxDev) maxDev = absDev
         })
+
         setDeviationMap(map)
+        setMaxDeviation(maxDev || 1) // vermeide Division durch 0
       })
-  }, [year, kpiA, kpiB])
+      .catch(err => {
+        if (err.name !== "AbortError") console.error(err)
+      })
+
+    return () => controller.abort()
+  }, [year, activeCombo])
 
   useEffect(() => {
     setSelectedGemeinde(null)
   }, [year, activeCombo])
+
+  useEffect(() => {
+    setSelectedGemeinde(null)
+  }, [deviationMap])
 
   // Animation
   useEffect(() => {
@@ -162,15 +209,37 @@ export default function MapDeviationPage() {
     return () => clearInterval(interval)
   }, [playing])
 
-  const getColor = (bfs: string) => {
-    const dev = deviationMap[bfs]
-    if (dev == null) return "#ccc"
-    const maxDev = 200
-    const norm = Math.min(Math.abs(dev) / maxDev, 1)
-    const strength = Math.round(255 * (1 - norm ** 0.5))
-    return dev > 0
-      ? `rgb(255, ${strength}, ${strength})`
-      : `rgb(${strength}, ${strength}, 255)`
+  function DeviationLegend() {
+    const steps = [
+      { color: "rgb(255,60,60)", label: "stark positiv" },
+      { color: "rgb(255,150,150)", label: "moderat positiv" },
+      { color: "rgb(255,230,230)", label: "leicht positiv" },
+      { color: "rgb(200,215,255)", label: "leicht negativ" },
+      { color: "rgb(180,200,255)", label: "moderat negativ" },
+      { color: "rgb(130,150,255)", label: "stark negativ" },
+    ]
+    return (
+      <div style={{
+        position: "absolute", top: "1rem", right: "1rem", zIndex: 1000,
+        backgroundColor: "#fff", borderRadius: "0.75rem", boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        padding: "1rem", width: "260px", border: "1px solid #e5e7eb", fontSize: "0.875rem"
+      }}>
+        <div style={{ fontWeight: 700, marginBottom: "0.75rem", color: "#1f2937" }}>
+          Abweichungsskala
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {steps.map((step, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{
+                width: "28px", height: "16px", backgroundColor: step.color,
+                border: "1px solid #ccc", borderRadius: "2px", marginRight: "10px"
+              }} />
+              <span style={{ color: "#374151", fontSize: "0.85rem" }}>{step.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -258,78 +327,16 @@ export default function MapDeviationPage() {
           />
           {geoData && (
             <>
-              <GeoJSON
-                key={`${activeCombo.key}-${year}-${Object.keys(deviationMap).length}`}
-                data={geoData}
-                style={(feature: any) => ({
-                  fillColor: getColor(feature.properties.BFS),
-                  fillOpacity: 0.75,
-                  color: "#333",
-                  weight: 1,
-                })}
-                onEachFeature={(feature, layer) => {
-                  const props = feature.properties
-                  const bfs = String(parseInt(props.BFS))
-                  layer.on("click", () => {
-                    setSelectedGemeinde({
-                      name: props.GEBIET_NAME,
-                      bfs,
-                      deviation: deviationMap[bfs]
-                    })
-                  })
-                  layer.on("mouseover", () => {
-                    (layer as L.Path).setStyle({
-                      weight: 2,
-                      color: "#666",
-                      fillOpacity: 0.9,
-                    })
-                  })
-                  layer.on("mouseout", () => {
-                    (layer as L.Path).setStyle({
-                      weight: 1,
-                      color: "#333",
-                      fillOpacity: 0.75,
-                    })
-                  })
-                }}
+              <DeviationLayer
+                geoData={geoData}
+                deviationMap={deviationMap}
+                setSelectedGemeinde={setSelectedGemeinde}
+                maxDeviation={maxDeviation}
               />
               {showLabels && <GemeindeLabels geoData={geoData} />}
             </>
           )}
         </MapContainer>
-      </div>
-    </div>
-  )
-}
-
-function DeviationLegend() {
-  const steps = [
-    { color: "rgb(255,60,60)", label: "stark positiv" },
-    { color: "rgb(255,150,150)", label: "moderat positiv" },
-    { color: "rgb(255,230,230)", label: "leicht positiv" },
-    { color: "rgb(200,215,255)", label: "leicht negativ" },
-    { color: "rgb(180,200,255)", label: "moderat negativ" },
-    { color: "rgb(130,150,255)", label: "stark negativ" },
-  ]
-  return (
-    <div style={{
-      position: "absolute", top: "1rem", right: "1rem", zIndex: 1000,
-      backgroundColor: "#fff", borderRadius: "0.75rem", boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-      padding: "1rem", width: "260px", border: "1px solid #e5e7eb", fontSize: "0.875rem"
-    }}>
-      <div style={{ fontWeight: 700, marginBottom: "0.75rem", color: "#1f2937" }}>
-        Abweichungsskala
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        {steps.map((step, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center" }}>
-            <div style={{
-              width: "28px", height: "16px", backgroundColor: step.color,
-              border: "1px solid #ccc", borderRadius: "2px", marginRight: "10px"
-            }} />
-            <span style={{ color: "#374151", fontSize: "0.85rem" }}>{step.label}</span>
-          </div>
-        ))}
       </div>
     </div>
   )
