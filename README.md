@@ -126,11 +126,7 @@ GET http://localhost:4000/api/gemeinde-details?bfs={BFS_NR}&year={Year}
 
 ---
 
-## Authors
 
-Janosh Werlen, ZHAW, Semester 8
-
----
 
 ## License
 

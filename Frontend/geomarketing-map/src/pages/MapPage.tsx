@@ -154,7 +154,7 @@ function KpiLegend({ thresholds, selectedKpi }: { thresholds: number[], selected
 export default function MapPage() {
   const [year, setYear] = useState(2020)
   const [geoData, setGeoData] = useState<any>(null)
-  const [setGemeindenKpiData] = useState<any[]>([])
+  const [gemeindenKpiData, setGemeindenKpiData] = useState<any[]>([])
   const [thresholds, setThresholds] = useState<number[]>([])
   const [selectedGemeinde, setSelectedGemeinde] = useState<any>(null)
   const [gemeindeDetails, setGemeindeDetails] = useState<any>(null)
