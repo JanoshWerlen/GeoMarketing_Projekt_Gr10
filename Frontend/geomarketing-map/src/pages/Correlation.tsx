@@ -38,6 +38,7 @@ export default function CorrelationPage() {
     equation: string
   } | null>(null)
   const [topCorrelations, setTopCorrelations] = useState<any[]>([])
+  const [excludeZurich, setExcludeZurich] = useState(false)
 
   useEffect(() => {
     fetch(`http://localhost:4000/api/gemeinden-kpis?year=${year}`)
@@ -100,6 +101,11 @@ export default function CorrelationPage() {
     }
   }, [trackedGemeinde, xKpi, yKpi])
 
+  // Filtered data for correlation plot (exclude Zürich if toggled)
+  const filteredData = excludeZurich
+    ? data.filter(row => row.GEBIET_NAME !== "Zürich" && row.GEBIET_NAME !== "Winterthur")
+    : data
+
   // Compute correlation and regression line
   useEffect(() => {
     // Guard: skip calculation if xKpi or yKpi is not selected
@@ -109,7 +115,7 @@ export default function CorrelationPage() {
     }
     let points: { x: number, y: number }[] = []
     if (mode === "classic") {
-      points = data
+      points = (excludeZurich ? data.filter(row => row.GEBIET_NAME !== "Zürich") : data)
         .filter(row => typeof row[xKpi] === "number" && typeof row[yKpi] === "number")
         .map(row => ({ x: row[xKpi], y: row[yKpi] }))
     } else if (mode === "average") {
@@ -135,7 +141,7 @@ export default function CorrelationPage() {
     const intercept = meanY - slope * meanX
     const equation = `y = ${slope.toFixed(3)}x + ${intercept.toFixed(3)}`
     setCorrelation({ r, slope, intercept, equation })
-  }, [data, averages, xKpi, yKpi, mode, year])
+  }, [data, averages, xKpi, yKpi, mode, year, excludeZurich])
 
   const gemeindeNames = data.map(row => row.GEBIET_NAME).filter(Boolean)
   const filteredGemeindeNames = gemeindeNames.filter(name =>
@@ -144,7 +150,7 @@ export default function CorrelationPage() {
 
   const classicDataset = {
     label: `Gemeinden ${year}`,
-    data: data
+    data: filteredData
       .filter(row => typeof row[xKpi] === "number" && typeof row[yKpi] === "number" && row.GEBIET_NAME !== trackedGemeinde)
       .map(row => ({
         x: row[xKpi],
@@ -157,7 +163,7 @@ export default function CorrelationPage() {
   const trackedDataset = trackedGemeinde
     ? {
         label: `Tracked: ${trackedGemeinde}`,
-        data: data
+        data: filteredData
           .filter(row => row.GEBIET_NAME === trackedGemeinde && typeof row[xKpi] === "number" && typeof row[yKpi] === "number")
           .map(row => ({
             x: row[xKpi],
@@ -182,11 +188,11 @@ export default function CorrelationPage() {
 
   // Regression line for scatter plot
   const regressionLineDataset =
-    correlation && (mode === "classic" ? data : averages).length > 1
+    correlation && (mode === "classic" ? filteredData : averages).length > 1
       ? (() => {
           let points: { x: number, y: number }[] = []
           if (mode === "classic") {
-            points = data
+            points = filteredData
               .filter(row => typeof row[xKpi] === "number" && typeof row[yKpi] === "number")
               .map(row => ({ x: row[xKpi], y: row[yKpi] }))
           } else if (mode === "average") {
@@ -222,11 +228,22 @@ export default function CorrelationPage() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6 text-blue-900">Korrelationen zwischen KPIs</h1>
 
-      {correlation && (
-  <div className="mb-4 px-6 py-3 bg-blue-50 rounded shadow flex flex-wrap gap-x-12 gap-y-2 items-center text-blue-900">
+      {/* Button to exclude/include Zürich */}
+      <div className="mb-4">
+        <button
+          className={`px-4 py-2 rounded ${excludeZurich ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-800"} mr-2`}
+          onClick={() => setExcludeZurich(v => !v)}
+        >
+          {excludeZurich ? "Zürich und Winterthur wieder einbeziehen" : "Zürich und Winterthur aus Plot entfernen (Outliers)"}
+        </button>
+        {excludeZurich && <span className="text-sm text-blue-700">Zürich wird aktuell aus dem Plot ausgeschlossen.</span>}
+      </div>
 
-  </div>
-)}
+      {correlation && (
+        <div className="mb-4 px-6 py-3 bg-blue-50 rounded shadow flex flex-wrap gap-x-12 gap-y-2 items-center text-blue-900">
+          {/* ...existing code or correlation info... */}
+        </div>
+      )}
 
       <section className="mb-10">
         <h2 className="text-lg font-semibold mb-2">Top-Korrelationen (|r| ≥ 0.7)</h2>
@@ -323,7 +340,7 @@ export default function CorrelationPage() {
       </div>
 
       <div className="flex gap-8">
-        <div className="h-[500px] w-1/2 bg-white rounded-xl shadow p-4">
+        <div className="h-[500px] w-1/2 bg-white rounded-xl shadow p-4 flex flex-col">
           <Scatter
             data={{
               datasets:
@@ -375,6 +392,15 @@ export default function CorrelationPage() {
             }}
             plugins={[ChartDataLabels]}
           />
+          {/* Correlation info below the plot */}
+          {correlation && (
+            <div className="mt-4 px-4 py-2 bg-blue-50 rounded shadow text-blue-900 text-sm">
+              <div><span className="font-semibold">Korrelationskoeffizient (r):</span> {correlation.r.toFixed(3)}</div>
+              <div><span className="font-semibold">Regressionsgleichung:</span> {correlation.equation}</div>
+              <div><span className="font-semibold">Steigung (slope):</span> {correlation.slope.toFixed(3)}</div>
+              <div><span className="font-semibold">Achsenabschnitt (intercept):</span> {correlation.intercept.toFixed(3)}</div>
+            </div>
+          )}
         </div>
         <div className="h-[500px] w-1/2 bg-white rounded-xl shadow p-4">
           {trackedGemeinde && trackedOvertime.length > 0 ? (
