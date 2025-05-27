@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from "react-leaflet"
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import { useMap } from "react-leaflet"
 import L from "leaflet"
@@ -11,6 +11,14 @@ const clusterColors = ["#377eb8", "#4daf4a", "#ff7f00"]
 // Definierte spannende Clusterkombinationen
 const clusterCombos = [
   {
+    key: "steuerkraft-vs-gewinn",
+    label: "Steuerkraft (Mio) vs. Reingewinn jur. Personen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Reingewinn JursPers in Mio",
+    description:
+      "Zeigt den Einfluss von Unternehmensgewinnen auf das Gesamtsteueraufkommen. Gemeinden mit hohen Unternehmensgewinnen bilden eigene Cluster – typisch für Unternehmenszentren.",
+  },
+  {
     key: "steuerkraft-vs-beschaeftigte",
     label: "Steuerkraft (Mio) vs. Anzahl Beschäftigte",
     kpiA: "Steuerkraft in Mio",
@@ -19,77 +27,69 @@ const clusterCombos = [
       "Vergleicht das Steueraufkommen einer Gemeinde mit der Zahl der Erwerbstätigen. Erwartung: Gemeinden mit vielen Arbeitsplätzen haben mehr Steuereinnahmen. Cluster trennen typische Wohnorte von Wirtschaftsstandorten.",
   },
   {
-    key: "gewinn-vs-steuerkraft",
-    label: "Reingewinn jur. Personen vs. Steuerkraft (Mio)",
-    kpiA: "Reingewinn JursPers in Mio",
-    kpiB: "Steuerkraft in Mio",
-    description:
-      "Zeigt den Einfluss von Unternehmensgewinnen auf das Gesamtsteueraufkommen. Gemeinden mit hohen Unternehmensgewinnen bilden eigene Cluster – typisch für Unternehmenszentren.",
-  },
-  {
-    key: "arbeitslosigkeit-vs-steuerkraft",
-    label: "Arbeitslosenquote vs. Steuerkraft bereinigt",
-    kpiA: "Arbeitslosenquote",
-    kpiB: "Steuerkraft Bereinigt",
-    description:
-      "Stellt wirtschaftliche Schwäche (Arbeitslosigkeit) der fiskalischen Leistungsfähigkeit gegenüber. Cluster trennen tendenziell strukturstarke von strukturschwachen Gemeinden.",
-  },
-  {
-    key: "gründung-vs-steuerkraft",
-    label: "Neugründungen vs. Steuerkraft (Mio)",
-    kpiA: "Anzahl Neugründungen Unternehmen",
-    kpiB: "Steuerkraft in Mio",
+    key: "steuerkraft-vs-gründung",
+    label: "Steuerkraft (Mio) vs. Neugründungen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Anzahl Neugründungen Unternehmen",
     description:
       "Misst, ob innovationsfreundliche Standorte (viele Neugründungen) gleichzeitig hohe Steuerkraft aufweisen. Cluster zeigen: wirtschaftsdynamische vs. stagnierende Gemeinden.",
   },
   {
-    key: "bau-vs-steuerkraft",
-    label: "Bauinvestitionen vs. Steuerkraft (Mio)",
-    kpiA: "Bauinvestition in Mio",
-    kpiB: "Steuerkraft in Mio",
+    key: "steuerkraft-vs-bau",
+    label: "Steuerkraft (Mio) vs. Bauinvestitionen",
+    kpiA: "Steuerkraft in Mio",
+    kpiB: "Bauinvestition in Mio",
     description:
       "Verbindet bauliche Entwicklung mit fiskaler Stärke. Cluster trennen boomende Wachstumsgemeinden (viel Bau, hohe Einnahmen) von eher stabilen oder rückläufigen Regionen.",
   },
   {
-    key: "steuerpk-vs-effizienz",
-    label: "Steuerkraft pro Kopf vs. Steuerkraft/Steuerfuss",
+    key: "steuerpk-vs-gewinn",
+    label: "Steuerkraft pro Kopf vs. Reingewinn jur. Personen",
     kpiA: "Steuerkraft pro Kopf",
-    kpiB: "Steuerkraft/Steuerfuss",
+    kpiB: "Reingewinn JursPers in Mio",
     description:
-      "Vergleicht individuelle Steuerleistung (pro Kopf) mit Effizienz der Steuererhebung. Hohe Werte bei beiden: reiche, effizient wirtschaftende Gemeinden. Cluster zeigen Reichtum vs. hohe Belastung.",
+      "Stellt individuelle Steuerkraft der Bevölkerung dem Gewinn von juristischen Personen gegenüber. Spannend für Orte mit hohem Unternehmensanteil und wohlhabender Bevölkerung."
   },
+  {
+    key: "steuerpk-vs-bau",
+    label: "Steuerkraft pro Kopf vs. Bauinvestitionen",
+    kpiA: "Steuerkraft pro Kopf",
+    kpiB: "Bauinvestition in Mio",
+    description:
+      "Verbindet individuelle Steuerkraft mit baulicher Dynamik. Gibt Hinweise auf wachsende, wohlhabende Gemeinden mit hoher Bautätigkeit."
+  }
 ]
 
 const clusterLegends: Record<string, string[]> = {
+    "steuerkraft-vs-gewinn": [
+    "tiefe Steuerkraft, geringer Unternehmensgewinn",
+    "mäßige Stuereinnahmen und Gewinne",
+    "hohe Steuerkraft & hoher Reingewinn (Zentrumsgemeinden)"
+  ],
   "steuerkraft-vs-beschaeftigte": [
     "wenig Beschäftigte & tiefe Steuerkraft",
     "durchschnittliche Wirtschaftsleistung",
     "viele Beschäftigte & hohe Steuerkraft"
   ],
-  "gewinn-vs-steuerkraft": [
-    "geringer Unternehmensgewinn, tiefe Steuerkraft",
-    "mäßige Gewinne und Steuereinnahmen",
-    "hoher Reingewinn & hohe Steuerkraft (Zentrumsgemeinden)"
-  ],
-  "arbeitslosigkeit-vs-steuerkraft": [
-    "hohe Arbeitslosigkeit, tiefe Steuerkraft (strukturschwach)",
-    "durchschnittliche Verhältnisse",
-    "niedrige Arbeitslosigkeit, hohe Steuerkraft (stark)"
-  ],
-  "gründung-vs-steuerkraft": [
-    "wenig Neugründungen, tiefe Steuerkraft",
+  "steuerkraft-vs-gründung": [
+    "tiefe Steuerkraft, wenig Neugründungen",
     "mäßige Dynamik",
-    "viele Gründungen & hohe Steuerkraft (dynamisch)"
+    "hohe Steuerkraft & viele Gründungen (dynamisch)"
   ],
-  "bau-vs-steuerkraft": [
-    "wenig Bauaktivität & tiefe Steuerkraft",
+  "steuerkraft-vs-bau": [
+    "tiefe Steuerkraft & wenig Bauaktivität",
     "durchschnittliche Entwicklung",
-    "viel Bau & hohe Steuerkraft (Wachstum)"
+    "hohe Steuerkraft & viel Bau (Wachstum)"
   ],
-  "steuerpk-vs-effizienz": [
-    "tiefer Pro-Kopf-Wert & geringe Effizienz",
-    "mittelmäßige Steuerertragsstruktur",
-    "hoher Pro-Kopf-Wert & effiziente Steuererhebung"
+    "steuerpk-vs-gewinn": [
+    "tiefe Pro-Kopf-Steuerkraft, wenig Gewinn",
+    "durchschnittliche Werte",
+    "hohe Pro-Kopf-Steuerkraft & hohe Gewinne (reiche Unternehmenszentren)"
+  ],
+  "steuerpk-vs-bau": [
+    "wenig Bau & tiefe Steuerkraft pro Kopf",
+    "durchschnittliche Entwicklung",
+    "viel Bau & hohe Steuerkraft pro Kopf (Wachstumsgemeinden)"
   ]
 }
 
@@ -188,42 +188,17 @@ export default function MapClusterPage() {
     fetch(`http://localhost:4000/api/analyse/cluster-map?year=${year}&x=${encodeURIComponent(activeCombo.kpiA)}&y=${encodeURIComponent(activeCombo.kpiB)}`)
       .then(res => res.json())
       .then(data => {
-        // 1. Werte gruppieren nach Cluster
-        const clusterSums: Record<number, number[]> = {}
-        data.forEach((d: any) => {
-          if (!clusterSums[d.Cluster]) clusterSums[d.Cluster] = [0, 0]
-          clusterSums[d.Cluster][0] += d.valA
-          clusterSums[d.Cluster][1] += d.valB
-        })
-
-        // 2. Summen berechnen & Cluster sortieren
-        const sortedClusters = Object.entries(clusterSums)
-          .map(([cluster, [sumA, sumB]]) => ({
-            oldCluster: parseInt(cluster),
-            total: sumA + sumB
-          }))
-          .sort((a, b) => a.total - b.total)
-
-        // 3. Neue Cluster-IDs zuweisen (schwächster = 0, stärkster = 2)
-        const remap: Record<number, number> = {}
-        sortedClusters.forEach((entry, index) => {
-          remap[entry.oldCluster] = index
-        })
-
-        // 4. Cluster neu mappen
         const map: Record<string, { cluster: number, valA: number, valB: number }> = {}
         data.forEach((d: any) => {
           const bfs = String(d.BFS)
           map[bfs] = {
-            cluster: remap[d.Cluster], // <- hier passiert die Umnummerierung
-            valA: d.valA,
-            valB: d.valB
+            cluster: d.Cluster,
+            valA: Number(d.valA),
+            valB: Number(d.valB),
           }
         })
-
         setClusterData(map)
       })
-
   }, [year, activeCombo])
 
   useEffect(() => {
@@ -353,8 +328,18 @@ export default function MapClusterPage() {
                   {selectedGemeinde.name}
                 </h2>
                 <p><strong>Cluster:</strong> {selectedGemeinde.cluster}</p>
-                <p><strong>{activeCombo.kpiA}:</strong> {selectedGemeinde.valA?.toFixed(2)}</p>
-                <p><strong>{activeCombo.kpiB}:</strong> {selectedGemeinde.valB?.toFixed(2)}</p>
+                <p>
+                  <strong>{activeCombo.kpiA}:</strong>{" "}
+                  {typeof selectedGemeinde.valA === "number" && !isNaN(selectedGemeinde.valA)
+                    ? selectedGemeinde.valA.toFixed(2)
+                    : "—"}
+                </p>
+                <p>
+                  <strong>{activeCombo.kpiB}:</strong>{" "}
+                  {typeof selectedGemeinde.valB === "number" && !isNaN(selectedGemeinde.valB)
+                    ? selectedGemeinde.valB.toFixed(2)
+                    : "—"}
+                </p>
               </>
             )}
           </div>

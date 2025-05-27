@@ -151,12 +151,10 @@ function KpiLegend({ thresholds, selectedKpi }: { thresholds: number[], selected
   )
 }
 
-
-
 export default function MapPage() {
   const [year, setYear] = useState(2020)
   const [geoData, setGeoData] = useState<any>(null)
-  const [gemeindenKpiData, setGemeindenKpiData] = useState<any[]>([])
+  const [setGemeindenKpiData] = useState<any[]>([])
   const [thresholds, setThresholds] = useState<number[]>([])
   const [selectedGemeinde, setSelectedGemeinde] = useState<any>(null)
   const [gemeindeDetails, setGemeindeDetails] = useState<any>(null)
@@ -165,9 +163,17 @@ export default function MapPage() {
   const [gemeindeTimeseries, setGemeindeTimeseries] = useState<any[] | null>(null)
   const [playing, setPlaying] = useState(false)
   const [showLabels, setShowLabels] = useState(true)
+  const [kpiThresholdsGlobal, setKpiThresholdsGlobal] = useState<Record<string, number[]>>({})
+
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setSelectedGemeinde(null)
+  }, [])
+
+  useEffect(() => {
+    fetch("http://localhost:4000/api/kpi-thresholds")
+      .then(res => res.json())
+      .then(setKpiThresholdsGlobal)
   }, [])
 
   useEffect(() => {
@@ -191,26 +197,18 @@ export default function MapPage() {
         setGemeindenKpiData(data)
         const first = data[0] || {}
         const allKpis = Object.keys(first).filter(
-          (k) => typeof first[k] === "number" && k !== "BFS" && k !== "AREA_ROUND" // Exclude BFS and AREA_ROUND
+          (k) => typeof first[k] === "number" && k !== "BFS" && k !== "AREA_ROUND"
         )
         setKpiList(allKpis)
         if (!allKpis.includes(selectedKpi)) {
           setSelectedKpi(allKpis[0] || "")
         }
-        const values = data
-          .map((row: any) => row[selectedKpi])
-          .filter((v: any) => typeof v === "number" && !isNaN(v))
-          .sort((a: number, b: number) => a - b)
-        if (values.length < 2) return
-        const deciles: number[] = []
-        for (let i = 1; i < 10; i++) {
-          const idx = Math.floor((i * values.length) / 10)
-          deciles.push(values[idx])
-        }
-        setThresholds(deciles)
       })
-      .catch((err) => console.error("KPI data load error:", err))
-  }, [year, selectedKpi])
+  }, [year])
+
+  useEffect(() => {
+    setThresholds(kpiThresholdsGlobal[selectedKpi] || [])
+  }, [selectedKpi, kpiThresholdsGlobal])
 
   useEffect(() => {
     if (selectedGemeinde) {
@@ -254,16 +252,17 @@ export default function MapPage() {
     if (typeof value !== "number" || isNaN(value)) return "#cccccc"
     if (thresholds.length !== 9) return "#ccc"
     return value <= thresholds[0] ? "#ffffff" :
-           value <= thresholds[1] ? "#f7fbff" :
-           value <= thresholds[2] ? "#deebf7" :
-           value <= thresholds[3] ? "#c6dbef" :
-           value <= thresholds[4] ? "#9ecae1" :
-           value <= thresholds[5] ? "#6baed6" :
-           value <= thresholds[6] ? "#4292c6" :
-           value <= thresholds[7] ? "#2171b5" :
-           value <= thresholds[8] ? "#08519c" :
+          value <= thresholds[1] ? "#f7fbff" :
+          value <= thresholds[2] ? "#deebf7" :
+          value <= thresholds[3] ? "#c6dbef" :
+          value <= thresholds[4] ? "#9ecae1" :
+          value <= thresholds[5] ? "#6baed6" :
+          value <= thresholds[6] ? "#4292c6" :
+          value <= thresholds[7] ? "#2171b5" :
+          value <= thresholds[8] ? "#08519c" :
                                     "#08306b"
   }
+
 
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden">

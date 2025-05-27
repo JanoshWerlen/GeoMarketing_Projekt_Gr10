@@ -81,56 +81,6 @@ async function fetchGemeindeGeoJSON(): Promise<any> {
   return res.json()
 }
 
-function MoranLegend() {
-  const colors = [
-    { color: "#08519c", label: "> 0.5" },
-    { color: "#6baed6", label: "0.2 – 0.5" },
-    { color: "#c6dbef", label: "0 – 0.2" },
-    { color: "#f7f7f7", label: "-0.2 – 0" },
-    { color: "#fcbba1", label: "-0.5 – -0.2" },
-    { color: "#cb181d", label: "< -0.5" },
-    { color: "#eee", label: "Nicht ausgewählt" },
-  ]
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: "1rem",
-        right: "1rem",
-        zIndex: 1000,
-        backgroundColor: "#ffffff",
-        borderRadius: "0.75rem",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        padding: "1rem",
-        width: "260px",
-        border: "1px solid #e5e7eb"
-      }}
-    >
-      <div style={{ fontWeight: "600", marginBottom: "0.5rem", fontSize: "0.875rem", color: "#1f2937" }}>
-        Moran's I Skala
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-        {colors.map(({ color, label }, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", fontSize: "0.75rem" }}>
-            <span
-              style={{
-                width: "28px",
-                height: "16px",
-                backgroundColor: color,
-                border: "1px solid #bbb",
-                borderRadius: "2px",
-                display: "inline-block",
-                marginRight: "8px"
-              }}
-            />
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 export default function GemeindeMoranMap() {
   const [gemeinden, setGemeinden] = useState<Gemeinde[]>([])
   const [moranScores, setMoranScores] = useState<MoranScore[]>([])
@@ -186,33 +136,7 @@ export default function GemeindeMoranMap() {
 
   const selectedGemeinde = gemeinden.find(g => g.id === selectedId)
   const selectedMoran = moranScores.find(m => m.gemeinde_id === selectedId)?.moran_i
-  const adjacentIds = selectedId ? adjacency[selectedId] || [] : []
-
   const highlightedIds = selectedId ? [selectedId, ...(adjacency[selectedId] || [])] : [];
-  const highlightedScores = moranScores.filter(m => highlightedIds.includes(m.gemeinde_id));
-
-  const neighborsWithScores = adjacentIds
-    .map(id => {
-      const gemeinde = gemeinden.find(g => g.id === id)
-      const moran = moranScores.find(m => m.gemeinde_id === id)?.moran_i
-      return {
-        id,
-        name: gemeinde?.name ?? id,
-        moran_i: moran,
-      }
-    })
-    .filter(n => n != null)
-    .sort((a, b) => (b.moran_i ?? -Infinity) - (a.moran_i ?? -Infinity))
-
-  const comparisonList = [
-    {
-      id: selectedId,
-      name: selectedGemeinde?.name ?? selectedId,
-      moran_i: selectedMoran,
-      isSelf: true,
-    },
-    ...neighborsWithScores.map(n => ({ ...n, isSelf: false })),
-  ].filter(n => n.id)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") setPopupOpen(false)
@@ -240,7 +164,6 @@ export default function GemeindeMoranMap() {
     const score = moranScores.find(m => m.gemeinde_id === id)?.moran_i;
     const isSelected = id === selectedId;
     const isNeighbor = adjacency[selectedId]?.includes(id);
-    const isHighlighted = highlightedIds.includes(id);
 
     // Selected polygon: always show Moran color, thick border
     if (isSelected) {
@@ -272,22 +195,6 @@ export default function GemeindeMoranMap() {
     };
   }
 
-  // Helper to get the correct moran score for a feature
-  function getFeatureMoranScore(feature: any) {
-    const id = feature.properties.id?.toString();
-    const bfs = feature.properties.BFS?.toString();
-    // Try all possible matches
-    let moranScore = moranScores.find(
-      m => m.gemeinde_id === id || m.gemeinde_id === bfs
-    )?.moran_i;
-    if (moranScore === undefined) {
-      moranScore = moranScores.find(
-        m => m.gemeinde_id == bfs || m.gemeinde_id == id
-      )?.moran_i;
-    }
-    return moranScore;
-  }
-
   // --- Sort highlightedIds by moran score descending for popup table ---
   const highlightedIdsSorted = [...highlightedIds].sort((a, b) => {
     const aScore = moranScores.find(m => m.gemeinde_id === a)?.moran_i ?? -Infinity;
@@ -298,97 +205,99 @@ export default function GemeindeMoranMap() {
   return (
     <div className="w-screen h-screen flex flex-col overflow-hidden">
       <h1 className="text-xl font-bold mb-4 text-blue-900">Gemeinde Karte Moran</h1>
-      <div className="p-4 bg-white shadow rounded-xl z-10 flex-shrink-0 mb-4">
-        <div className="flex gap-4 items-center flex-wrap">
-          <label className="font-semibold mr-2">KPI:</label>
-          <select
-            value={selectedKpi}
-            onChange={e => setSelectedKpi(e.target.value)}
-            className="min-w-[180px] mr-4"
-          >
-            {kpiList.map(kpi => (
-              <option key={kpi} value={kpi}>{kpi}</option>
-            ))}
-          </select>
-          <label className="font-semibold mr-2">Gemeinde:</label>
-          <select
-            value={selectedId}
-            onChange={e => {
-              setSelectedId(e.target.value)
-              setPopupOpen(!!e.target.value)
-            }}
-            className="min-w-[220px]"
-          >
-            <option value="">Select Gemeinde</option>
-            {gemeinden.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-          {selectedId && (
-            <span className="ml-6 font-medium text-blue-900">
-              Moran's I: <span className="font-mono">{selectedMoran !== undefined ? selectedMoran.toFixed(3) : "N/A"}</span>
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="flex-1 relative overflow-hidden">
-        <MoranLegend />
-        {popupOpen && selectedId && (
-          <div
-            className="absolute top-4 left-4 text-black rounded-xl p-6 shadow-lg border border-gray-200 w-[450px] max-h-[80vh] overflow-y-auto z-[1000] bg-white"
-            style={{ backgroundColor: "#ffffff" }}
-          >
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-bold text-gray-800">
-                {selectedGemeinde?.name ?? "Unbekannt"}
-              </h3>
-              <button
-                onClick={() => setPopupOpen(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                title="Schliessen"
-              >
-                &times;
-              </button>
+      <div style={{ height: 'calc(100vh - 140px)', width: '100%', position: "relative" }}>
+        <div
+          style={{
+            position: "absolute",
+            top: "1rem",
+            left: "1rem",
+            zIndex: 1000,
+            backgroundColor: "#ffffff",
+            borderRadius: "0.75rem",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            padding: "1rem",
+            width: "320px",
+            border: "1px solid #e5e7eb",
+          }}
+        >
+          <div className="text-sm text-gray-700">
+            <div className="text-base mb-2 font-bold text-blue-900" style={{ fontWeight: 800 }}>
+              Moran's I Analyse
             </div>
-            <div className="text-sm text-gray-500 mb-2">
-              BFS-Nr.: {selectedGemeinde?.id}
-            </div>
-            <div className="text-sm font-medium mb-4">
-              Moran's I: <span className="font-mono">{selectedMoran !== undefined ? selectedMoran.toFixed(3) : "N/A"}</span>
-            </div>
-            <div className="mb-2 font-semibold">Vergleich mit Nachbarn:</div>
-            <table className="w-full text-sm border">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="text-left px-2 py-1">Gemeinde</th>
-                  <th className="text-right px-2 py-1">Moran's I</th>
-                </tr>
-              </thead>
-              <tbody>
-                {highlightedIdsSorted.map(id => {
-                  const gemeinde = gemeinden.find(g => g.id === id);
-                  const moran = moranScores.find(m => m.gemeinde_id === id)?.moran_i;
-                  return (
-                    <tr key={id} className={id === selectedId ? "bg-blue-50 font-bold" : ""}>
-                      <td className="px-2 py-1">
-                        {gemeinde?.name ?? id}
-                        {id === selectedId ? " (Ausgewählt)" : ""}
-                      </td>
-                      <td className="px-2 py-1 text-right">
-                        {moran !== undefined && moran !== null ? moran.toFixed(3) : "N/A"}
-                      </td>
+
+            {/* KPI Auswahl */}
+            <label className="block text-sm font-medium mb-1 text-gray-700" style={{ marginTop: "1.25rem" }}>KPI:</label>
+            <select
+              value={selectedKpi}
+              onChange={e => setSelectedKpi(e.target.value)}
+              className="w-full border border-gray-300 rounded px-2 py-1 text-sm mb-3"
+            >
+              {kpiList.map(kpi => (
+                <option key={kpi} value={kpi}>{kpi}</option>
+              ))}
+            </select>
+
+            {/* Gemeinde Auswahl */}
+            <label className="block text-sm font-medium mb-1 text-gray-700" style={{ marginTop: "1.25rem" }}>Gemeinde:</label>
+            <select
+              value={selectedId}
+              onChange={e => {
+                setSelectedId(e.target.value)
+                setPopupOpen(!!e.target.value)
+              }}
+              className="w-full border border-gray-300 rounded px-2 py-1 text-sm mb-3"
+            >
+              <option value="">– Bitte wählen –</option>
+              {gemeinden.map(g => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+
+            <hr className="my-3 border-gray-200" style={{ marginTop: "1.25rem" }}/>
+
+            {/* Optional: Moran's I direkt anzeigen */}
+            {selectedId && (
+              <div className="text-sm text-blue-900 font-medium mb-2">
+                Moran's I: <span className="font-mono">{selectedMoran?.toFixed(3) ?? "N/A"}</span>
+              </div>
+            )}
+
+            {/* --- Details der Gemeinde --- */}
+            {selectedId && (
+              <>
+                <h2 className="font-bold text-blue-800 mb-1">{selectedGemeinde?.name ?? "Unbekannt"}</h2>
+                <p className="text-sm text-gray-700 mb-2">BFS-Nr.: {selectedGemeinde?.id}</p>
+                <p className="text-sm font-semibold mb-2">Vergleich mit Nachbarn:</p>
+                <table className="w-full text-sm border mb-2">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="text-left px-2 py-1">Gemeinde</th>
+                      <th className="text-right px-2 py-1">Moran's I</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {highlightedIdsSorted.map(id => {
+                      const gemeinde = gemeinden.find(g => g.id === id);
+                      const moran = moranScores.find(m => m.gemeinde_id === id)?.moran_i;
+                      return (
+                        <tr key={id} className={id === selectedId ? "bg-blue-50 font-bold" : ""}>
+                          <td className="px-2 py-1">{gemeinde?.name ?? id}</td>
+                          <td className="px-2 py-1 text-right">
+                            {moran !== undefined && moran !== null ? moran.toFixed(3) : "N/A"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
-        )}
+        </div>
         <MapContainer
-          center={[47.38, 8.54]}
-          zoom={11}
-          scrollWheelZoom={false}
-          dragging={false}
+          center={[47.4, 8.5]}
+          zoom={10}
+          scrollWheelZoom={true}
           doubleClickZoom={false}
           zoomControl={false}
           style={{ height: "100%", width: "100%" }}
